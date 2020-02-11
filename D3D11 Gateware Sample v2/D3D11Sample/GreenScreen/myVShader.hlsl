@@ -1,10 +1,21 @@
-struct myVertex
+struct InputVertex
 {
-	xyzw[4];
-	rgbx[4];
+	float4 xyzw : POSITION;
+	float4 rgbx : COLOR;
 };
 
-float4 main( float4 pos : POSITION ) : SV_POSITION
+struct OutputVertex
 {
-	return pos;
+	float4 xyzw : SV_POSITION;
+	float4 rgbx : COLOR;
+};
+
+OutputVertex main(InputVertex input)
+{
+	OutputVertex output = (OutputVertex)0;
+	output.xyzw = input.xyzw;
+	//math
+
+
+	return output;
 }
