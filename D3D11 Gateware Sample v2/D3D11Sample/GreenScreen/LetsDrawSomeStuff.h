@@ -17,7 +17,11 @@ struct Vertex3D
 	float rgbx[4];
 };
 
-
+Vertex3D myTri[3] = {
+	{ { 1, 0, 0, 1 }, { 1, 0, 0, 1 } },
+	{ { 0, 1, 0, 1 }, { 0, 1, 0, 1 } },
+	{ { 0, 0, 1, 1 }, { 0, 0, 1, 1 } }
+};
 
 // Simple Container class to make life easier/cleaner
 class LetsDrawSomeStuff
@@ -30,11 +34,11 @@ class LetsDrawSomeStuff
 	ID3D11DeviceContext *myContext = nullptr;
 
 	// TODO: Add your own D3D11 variables here (be sure to "Release()" them when done!)
-
-	ID3D11Buffer* vertexBuffer;
-	ID3D11InputLayout* vertexLayout;
-	ID3D11VertexShader* vertexShader; //HLSL
-	ID3D11PixelShader* pixelShader; //AHLSL
+	 
+	ID3D11Buffer*		vertexBuffer = nullptr;
+	ID3D11InputLayout*	vertexLayout = nullptr;
+	ID3D11VertexShader* vertexShader = nullptr; //HLSL
+	ID3D11PixelShader*	pixelShader	 = nullptr; //AHLSL
 
 public:
 	// Init
@@ -73,6 +77,10 @@ LetsDrawSomeStuff::~LetsDrawSomeStuff()
 
 	// TODO: "Release()" more stuff here!
 
+	if (vertexBuffer) vertexBuffer->Release();
+	if (vertexLayout) vertexLayout->Release();
+	if (vertexShader) vertexShader->Release();
+	if (pixelShader) pixelShader->Release();
 
 	if (mySurface) // Free Gateware Interface
 	{
@@ -102,11 +110,13 @@ void LetsDrawSomeStuff::Render()
 			ID3D11RenderTargetView* const targets[] = { myRenderTargetView };
 			myContext->OMSetRenderTargets(1, targets, myDepthStencilView);
 
-			// Clear the screen to green
-			const float d_green[] = { 0.0f, 0.0f, 0.5f, 1 }; // "DirectX Green"
-			myContext->ClearRenderTargetView(myRenderTargetView, d_green);
+			// Clear the screen to blue
+			const float d_blue[] = { 0.0f, 0.0f, 0.5f, 1 }; // "DirectX Blue"
+			myContext->ClearRenderTargetView(myRenderTargetView, d_blue);
 			
 			// TODO: Set your shaders, Update & Set your constant buffers, Attatch your vertex & index buffers, Set your InputLayout & Topology & Draw!
+
+
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
@@ -115,7 +125,6 @@ void LetsDrawSomeStuff::Render()
 			// Free any temp DX handles aquired this frame
 			myRenderTargetView->Release();
 			
-			if (vertexBuffer) vertexBuffer->Release();
 		}
 	}
 }
