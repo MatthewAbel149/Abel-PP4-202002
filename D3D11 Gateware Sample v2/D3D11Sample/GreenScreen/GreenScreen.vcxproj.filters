@@ -29,4 +29,7 @@
       <Filter>Gateware</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="myVShader.hlsl" />
+  </ItemGroup>
 </Project>
