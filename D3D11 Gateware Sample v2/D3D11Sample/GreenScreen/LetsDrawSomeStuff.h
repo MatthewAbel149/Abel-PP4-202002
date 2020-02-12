@@ -11,6 +11,10 @@
 // Include DirectX11 for interface access
 #include <d3d11.h>
 
+#include "myVShader.csh"
+#include "myPShader.csh"
+
+
 struct Vertex3D
 {
 	float xyzw[4];
@@ -79,8 +83,18 @@ LetsDrawSomeStuff::LetsDrawSomeStuff(GW::SYSTEM::GWindow* attatchPoint)
 			HRESULT hr = myDevice->CreateBuffer(&bDesc, &subData, &vertexBuffer);
 			
 
-			//myDevice->CreateVertexShader();
-			//myDevice->CreateInputLayout();
+			hr = myDevice->CreateVertexShader(VSHADER, sizeof(VSHADER), nullptr, &vertexShader);
+			hr = myDevice->CreatePixelShader(PSHADER, sizeof(PSHADER), nullptr, &pixelShader);
+			
+			D3D11_INPUT_ELEMENT_DESC ieDesc[] = 
+			{
+				{"POSITION", 0,	DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA},
+				{"COLOR", 0,	DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA}
+
+			};
+
+			hr = myDevice->CreateInputLayout(ieDesc, 2, VSHADER, sizeof(VSHADER), &vertexLayout );
+			
 			
 		}
 	}
@@ -135,7 +149,7 @@ void LetsDrawSomeStuff::Render()
 			
 			// TODO: Set your shaders, Update & Set your constant buffers, Attatch your vertex & index buffers, Set your InputLayout & Topology & Draw!
 
-
+			myContext->RSSetViewports(1, &viewport);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.

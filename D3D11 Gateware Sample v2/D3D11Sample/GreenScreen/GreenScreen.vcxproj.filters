@@ -31,5 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="myVShader.hlsl" />
+    <FxCompile Include="myPShader.hlsl" />
   </ItemGroup>
 </Project>
