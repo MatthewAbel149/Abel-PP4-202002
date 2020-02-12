@@ -149,7 +149,7 @@ void LetsDrawSomeStuff::Render()
 			
 			// TODO: Set your shaders, Update & Set your constant buffers, Attatch your vertex & index buffers, Set your InputLayout & Topology & Draw!
 
-			myContext->RSSetViewports(1, &viewport);
+			//myContext->RSSetViewports(1, &myPort);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
