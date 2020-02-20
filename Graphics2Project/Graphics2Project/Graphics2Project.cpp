@@ -6,6 +6,12 @@
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
 
+ID3D11Device* myDev;
+IDXGISwapChain* mySwap;
+ID3D11DeviceContext* myCon;
+ID3D11RenderTargetView* myRtv;
+D3D11_VIEWPORT* myPort;
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -112,6 +118,28 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+
+   RECT myWinR;
+   GetClientRect(hWnd, &myWinR);
+
+   // attach d3d11 to our window
+   D3D_FEATURE_LEVEL dx11 = D3D_FEATURE_LEVEL_11_0;
+   DXGI_SWAP_CHAIN_DESC swap;
+   ZeroMemory(&swap, sizeof(DXGI_SWAP_CHAIN_DESC));
+   swap.BufferCount = 1;
+   swap.OutputWindow = hWnd;
+   swap.Windowed = true;
+   swap.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+   swap.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+   swap.BufferDesc.Width = myWinR.right - myWinR.left;
+   swap.BufferDesc.Height = myWinR.bottom - myWinR.top;
+   swap.BufferUsage = DXGI_USAGE_BACK_BUFFER;
+   swap.SampleDesc.Count = 1;
+   //swap.SampleDesc
+
+   HRESULT hr;
+   hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG,
+                        &dx11, 1, D3D11_SDK_VERSION, &swap, &mySwap, &myDev, 0, &myCon);
 
    return TRUE;
 }
