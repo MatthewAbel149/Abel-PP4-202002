@@ -3,14 +3,28 @@
 
 #include "framework.h"
 #include "Graphics2Project.h"
+
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
 
+// for init
 ID3D11Device* myDev;
 IDXGISwapChain* mySwap;
 ID3D11DeviceContext* myCon;
+
+// for drawing
 ID3D11RenderTargetView* myRtv;
 D3D11_VIEWPORT myPort;
+
+struct MyVertex
+{
+    float xyzw[4];
+    float rgba[4];
+};
+
+ID3D11Buffer* vBuff;
+ID3D11InputLayout* vLayout; //null
+ID3D11PixelShader* pShader; //null
 
 #define MAX_LOADSTRING 100
 
@@ -168,6 +182,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     myPort.TopLeftX = myPort.TopLeftY = 0;
     myPort.MinDepth = 0;
     myPort.MaxDepth = 1;
+    
+    MyVertex poly[3] = //NDC
+    {
+        { {0.0f, 0.0f, 0.0f, 1.f}, {1,1,0,1} },
+        { {0.5f, 0.5f, 0.5f, 1.f}, {0,1,1,1} },
+        { {0.2f, 0.7f, 0.2f, 1.f}, {1,0,1,1} }
+    };
+
+    // load on card
+
+    //describe to D3D11
+
+    //write and compile and load shaders
+
     
 
    return TRUE;

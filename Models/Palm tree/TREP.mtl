@@ -1,0 +1,8 @@
+newmtl mt_tree_palm
+Ka 0 0 0
+Kd 0.972549 0.972549 0.972549
+d 1
+Tr 1
+map_Ka mt_tree_palm.png
+map_Kd mt_tree_palm.png
+map_d mt_tree_palm.png
