@@ -10,7 +10,7 @@ ID3D11Device* myDev;
 IDXGISwapChain* mySwap;
 ID3D11DeviceContext* myCon;
 ID3D11RenderTargetView* myRtv;
-D3D11_VIEWPORT* myPort;
+D3D11_VIEWPORT myPort;
 
 #define MAX_LOADSTRING 100
 
@@ -63,8 +63,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             break;
 
         // rendering here
-        ID3D11RenderTargetView* tempRTV[] = { myRtv }; //to remove pass nullptr instead of myRtv
-        myCon->OMSetRenderTargets(1, tempRTV, nullptr);
+        //ID3D11RenderTargetView* tempRTV[] = { myRtv }; //to remove pass nullptr instead of myRtv
+        //myCon->OMSetRenderTargets(1, tempRTV, nullptr);
+
+        float color[] = {0.f, 0.f, 0.6, 1.f};
+        myCon->ClearRenderTargetView(myRtv, color);
+
+        mySwap->Present(0, 0);
     }
 
     //Release all our D3D11 interfaces
@@ -158,11 +163,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    backbuffer->Release();
 
-    myPort->Width = swap.BufferDesc.Width;
-    myPort->Height = swap.BufferDesc.Height;
-    myPort->TopLeftX = myPort->TopLeftY = 0;
-    myPort->MinDepth = 0;
-    myPort->MaxDepth = 1;
+    myPort.Width = swap.BufferDesc.Width;
+    myPort.Height = swap.BufferDesc.Height;
+    myPort.TopLeftX = myPort.TopLeftY = 0;
+    myPort.MinDepth = 0;
+    myPort.MaxDepth = 1;
     
 
    return TRUE;
