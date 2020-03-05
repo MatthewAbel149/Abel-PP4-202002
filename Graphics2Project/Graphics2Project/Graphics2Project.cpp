@@ -69,7 +69,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         float color[] = {0.f, 0.f, 0.6, 1.f};
         myCon->ClearRenderTargetView(myRtv, color);
 
-        mySwap->Present(0, 0);
+        mySwap->Present(1, 0);
     }
 
     //Release all our D3D11 interfaces
@@ -202,14 +202,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
-        }
-        break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            EndPaint(hWnd, &ps);
         }
         break;
     case WM_DESTROY:
