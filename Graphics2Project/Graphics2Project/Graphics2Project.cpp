@@ -59,9 +59,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-        if (msg.lParam == WM_QUIT)
+        if (msg.message == WM_QUIT)
             break;
+
+        // rendering here
+        ID3D11RenderTargetView* tempRTV[] = { myRtv }; //to remove pass nullptr instead of myRtv
+        myCon->OMSetRenderTargets(1, tempRTV, nullptr);
     }
+
+    //Release all our D3D11 interfaces
+    myCon->Release();
+    mySwap->Release();
+    myDev->Release();
+    myRtv->Release();
+    
 
     return (int) msg.wParam;
 }
@@ -133,13 +144,26 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    swap.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
    swap.BufferDesc.Width = myWinR.right - myWinR.left;
    swap.BufferDesc.Height = myWinR.bottom - myWinR.top;
-   swap.BufferUsage = DXGI_USAGE_BACK_BUFFER;
+   swap.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
    swap.SampleDesc.Count = 1;
    //swap.SampleDesc
 
    HRESULT hr;
    hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG,
                         &dx11, 1, D3D11_SDK_VERSION, &swap, &mySwap, &myDev, 0, &myCon);
+   
+   ID3D11Resource* backbuffer;
+   hr = mySwap->GetBuffer(0, _uuidof(backbuffer), (void**)&backbuffer);
+   hr = myDev->CreateRenderTargetView(backbuffer, NULL, &myRtv);
+
+   backbuffer->Release();
+
+    myPort->Width = swap.BufferDesc.Width;
+    myPort->Height = swap.BufferDesc.Height;
+    myPort->TopLeftX = myPort->TopLeftY = 0;
+    myPort->MinDepth = 0;
+    myPort->MaxDepth = 1;
+    
 
    return TRUE;
 }
