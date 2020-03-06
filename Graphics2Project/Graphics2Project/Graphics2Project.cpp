@@ -91,6 +91,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     mySwap->Release();
     myDev->Release();
     myRtv->Release();
+    vBuff->Release();
     
 
     return (int) msg.wParam;
@@ -191,10 +192,26 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     };
 
     // load on card
+    CD3D11_BUFFER_DESC bDesc;
+    D3D11_SUBRESOURCE_DATA subData;
+    ZeroMemory(&bDesc, sizeof(bDesc));
+    ZeroMemory(&subData, sizeof(subData));
 
-    //describe to D3D11
+    bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bDesc.ByteWidth = sizeof(poly) * 3;
+    bDesc.CPUAccessFlags = 0;
+    bDesc.StructureByteStride = 0;
+    bDesc.Usage = D3D11_USAGE_DEFAULT;
+
+    subData.pSysMem = poly;
+
+    hr = myDev->CreateBuffer(&bDesc, &subData, &vBuff);
 
     //write and compile and load shaders
+    //myDev->CreateVertexShader();
+
+    //describe vertex D3D11
+    //myDev->CreateInputLayout();
 
     
 
