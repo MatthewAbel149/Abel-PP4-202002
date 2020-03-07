@@ -1,12 +1,12 @@
 struct InputVertex
 {
-    float xyzw[4] : POSITION;
-    float rgba[4] : COLOR;
+    float4 xyzw : POSITION;
+    float4 rgba : COLOR;
 };
 
 struct OutputVertex
 {
-    float xyzw[4] : SV_POSITION;
+    float4 xyzw : SV_POSITION;
 };
 
 OutputVertex main( InputVertex input )
