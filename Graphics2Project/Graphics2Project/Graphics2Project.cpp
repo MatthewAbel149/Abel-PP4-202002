@@ -10,6 +10,7 @@
 #include <DirectXMath.h>
 using namespace DirectX;
 
+
 #include "MyPShader.csh"
 #include "MyVShader.csh"
 

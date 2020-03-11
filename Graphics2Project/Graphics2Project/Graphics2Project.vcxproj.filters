@@ -27,6 +27,12 @@
     <ClInclude Include="Graphics2Project.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Header Models\Stonehenge\StoneHenge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Header Models\Stonehenge\StoneHenge_Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics2Project.cpp">
