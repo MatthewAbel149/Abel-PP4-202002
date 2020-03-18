@@ -2,8 +2,9 @@
 
 struct InputVertex
 {
-    float4 xyzw : POSITION;
-    float4 rgba : COLOR;
+    float3 pos : POSITION;
+    float3 uvw : TEXCOORD;
+    float3 nrm : NORMAL;
 };
 
 struct OutputVertex
@@ -22,8 +23,8 @@ cbuffer SHADER_VARS : register(b0)
 OutputVertex main( InputVertex input )
 {
     OutputVertex output = (OutputVertex)0;
-    output.xyzw = input.xyzw;
-    output.rgba = input.rgba;
+    output.pos = input.pos;
+    output.rgba = input.uvw;
     //math here
 
     output.xyzw = mul(worldMatrix, output.xyzw);
@@ -32,5 +33,3 @@ OutputVertex main( InputVertex input )
 
 	return output;
 }
-
-

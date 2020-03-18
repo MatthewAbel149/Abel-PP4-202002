@@ -58,5 +58,6 @@
   <ItemGroup>
     <FxCompile Include="MyVShader.hlsl" />
     <FxCompile Include="MyPShader.hlsl" />
+    <FxCompile Include="MyMeshVShader.hlsl" />
   </ItemGroup>
 </Project>

@@ -287,7 +287,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     subData.pSysMem = poly;
 
-    hr = myDev->CreateBuffer(&bDesc, &subData, &vBuff);
+    hr = myDev->CreateBuffer(&bDesc, nullptr, &vBuff);
 
     //write and compile and load shaders
     hr = myDev->CreateVertexShader(MyVShader, sizeof(MyVShader), nullptr, &vShader);
