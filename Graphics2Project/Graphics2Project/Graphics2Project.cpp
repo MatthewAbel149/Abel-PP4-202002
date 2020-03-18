@@ -1,18 +1,7 @@
 // Graphics2Project.cpp : Defines the entry point for the application.
 //
 
-#include "framework.h"
-#include "Graphics2Project.h"
-
-#include <d3d11.h>
-#pragma comment(lib, "d3d11.lib")
-
-#include <DirectXMath.h>
-using namespace DirectX;
-
-
-#include "MyPShader.csh"
-#include "MyVShader.csh"
+#include "Includes.h"
 
 
 // for init
@@ -38,6 +27,9 @@ ID3D11PixelShader* pShader; //null
 ID3D11VertexShader* vShader; //null
 
 ID3D11Buffer* cBuff; //shader variables
+
+ID3D11Buffer* vBuffMesh;
+ID3D11Buffer* iBuffMesh;
 
 // Math Stuff
 struct WVP {
@@ -148,6 +140,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         ID3D11Buffer* constants[] = { cBuff };
         myCon->VSSetConstantBuffers(0, 1, constants);
 
+        //complex mesh
+
+
 
         mySwap->Present(1, 0);
     }
@@ -161,6 +156,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     pShader->Release();
     vShader->Release();
     vLayout->Release();
+    cBuff->Release();
+    //vBuffMesh->Release();
+    //iBuffMesh->Release();
     
 
     return (int) msg.wParam;
@@ -285,7 +283,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     bDesc.ByteWidth = sizeof(poly) * numVerts;
     bDesc.CPUAccessFlags = 0;
     bDesc.StructureByteStride = 0;
-    bDesc.Usage = D3D11_USAGE_DEFAULT;
+    bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 
     subData.pSysMem = poly;
 
@@ -309,15 +307,42 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     bDesc.ByteWidth = sizeof(WVP);
     bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    bDesc.MiscFlags = 0;
     bDesc.StructureByteStride = 0;
     bDesc.Usage = D3D11_USAGE_DYNAMIC;
 
-    subData.pSysMem = 0;
+    //subData.pSysMem = 0;
 
     hr = myDev->CreateBuffer(&bDesc, nullptr, &cBuff);
 
+    //complex mesh
+    bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bDesc.ByteWidth = sizeof(StoneHenge_data);
+    bDesc.CPUAccessFlags = 0;
+    bDesc.MiscFlags = 0;
+    bDesc.StructureByteStride = 0;
+    bDesc.Usage = D3D11_USAGE_IMMUTABLE;
+
+    subData.pSysMem = StoneHenge_data;
+    hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
+    //index buffer mesh
+    bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    bDesc.ByteWidth = sizeof(StoneHenge_data);
+    subData.pSysMem = StoneHenge_indicies;
+    hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh); 
+
+
    return TRUE;
 }
+
+/*OBJLoad() {
+    vector< unsigned int > vertexIndices, uvIndices, normalIndices;
+    vector< glm::vec3 > temp_vertices;
+    vector< glm::vec2 > temp_uvs;
+    vector< glm::vec3 > temp_normals;
+
+};
+*/
 
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)

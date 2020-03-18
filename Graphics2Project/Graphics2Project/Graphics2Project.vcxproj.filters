@@ -27,10 +27,13 @@
     <ClInclude Include="Graphics2Project.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Header Models\Stonehenge\StoneHenge.h">
+    <ClInclude Include="assets\Stonehenge\StoneHenge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Header Models\Stonehenge\StoneHenge_Texture.h">
+    <ClInclude Include="Includes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glm\glm.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
