@@ -15,6 +15,7 @@ using namespace std;
 
 #include "MyPShader.csh"
 #include "MyVShader.csh"
+#include "MyMeshVShader.csh"
 
 #include "assets/Stonehenge/StoneHenge.h"
 //#include "assets/Fruit/Pineapple/Pineapple.obj"

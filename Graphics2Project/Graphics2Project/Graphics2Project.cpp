@@ -1,8 +1,6 @@
 // Graphics2Project.cpp : Defines the entry point for the application.
 //
-
 #include "Includes.h"
-
 
 // for init
 ID3D11Device* myDev;
@@ -30,6 +28,9 @@ ID3D11Buffer* cBuff; //shader variables
 
 ID3D11Buffer* vBuffMesh;
 ID3D11Buffer* iBuffMesh;
+
+ID3D11VertexShader* vMeshShader;
+ID3D11InputLayout* vMeshLayout; 
 
 // Math Stuff
 struct WVP {
@@ -90,7 +91,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             break;
 
         // rendering here
-        float color[] = {0.f, 0.f, 0.6f, 1.f};
+        float color[] = { 0.f, 0.f, 0.6f, 1.f };
         myCon->ClearRenderTargetView(myRtv, color);
 
         // Setup the pipeline
@@ -103,7 +104,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         // Input Addembler
         myCon->IASetInputLayout(vLayout);
 
-        UINT strides[] = {sizeof(MyVertex)};
+        UINT strides[] = { sizeof(MyVertex) };
         UINT offsets[] = { 0 };
         ID3D11Buffer* tempVB[] = { vBuff };
         myCon->IASetVertexBuffers(0, 1, tempVB, strides, offsets);
@@ -113,21 +114,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //pixel shader stage
         myCon->PSSetShader(pShader, 0, 0);
 
-        //Draw
-        myCon->Draw(numVerts, 0);
 
+        
         //world
-        static float rot = 0; rot += 0.05f; //replace with timer
+        static float rot = 0; rot += 0.0005f; //replace with timer
         XMMATRIX temp = XMMatrixIdentity();
         temp = XMMatrixTranslation(0, 0, 3);
         XMMATRIX temp2 = XMMatrixRotationY(rot);
         temp = XMMatrixMultiply(temp2, temp);
         XMStoreFloat4x4(&myMatrices.wMatrix, temp);
         //view
-        temp = XMMatrixLookAtLH({ 2,1,-1 }, { 0,0,3 }, { 0,1,0 });
+        temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
         XMStoreFloat4x4(&myMatrices.vMatrix, temp);
         //projection
-        temp = XMMatrixPerspectiveFovLH(3.14f/2.0f, aspectRatio, 0.1f, 1000);
+        temp = XMMatrixPerspectiveFovLH(3.14f / 2.0f, aspectRatio, 0.1f, 1000);
         XMStoreFloat4x4(&myMatrices.pMatrix, temp);
 
 
@@ -140,9 +140,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         ID3D11Buffer* constants[] = { cBuff };
         myCon->VSSetConstantBuffers(0, 1, constants);
 
-        //complex mesh
+        //Draw
+        myCon->Draw(numVerts, 0);
 
 
+        UINT mesh_strides[] = { sizeof(_OBJ_VERT_) };
+        UINT mesh_offsets[] = { 0 };
+        ID3D11Buffer* meshVB[] = { vBuffMesh };
+
+        myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
+        myCon->IASetIndexBuffer(iBuffMesh, DXGI_FORMAT_R32_UINT, 0);
+        myCon->VSSetShader(vMeshShader, 0, 0);
+        myCon->IASetInputLayout(vMeshLayout);
+
+        myCon->DrawIndexed(2532, 0, 0);
 
         mySwap->Present(1, 0);
     }
@@ -156,9 +167,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     pShader->Release();
     vShader->Release();
     vLayout->Release();
+    vMeshLayout->Release();
     cBuff->Release();
-    //vBuffMesh->Release();
-    //iBuffMesh->Release();
+    vBuffMesh->Release();
+    iBuffMesh->Release();
+    vMeshShader->Release();
     
 
     return (int) msg.wParam;
@@ -280,14 +293,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     ZeroMemory(&subData, sizeof(subData));
 
     bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bDesc.ByteWidth = sizeof(poly) * numVerts;
+    bDesc.ByteWidth = sizeof(MyVertex) * numVerts;
     bDesc.CPUAccessFlags = 0;
+    bDesc.MiscFlags = 0;
     bDesc.StructureByteStride = 0;
     bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 
     subData.pSysMem = poly;
 
-    hr = myDev->CreateBuffer(&bDesc, nullptr, &vBuff);
+    hr = myDev->CreateBuffer(&bDesc, &subData, &vBuff);
 
     //write and compile and load shaders
     hr = myDev->CreateVertexShader(MyVShader, sizeof(MyVShader), nullptr, &vShader);
@@ -301,6 +315,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     hr = myDev->CreateInputLayout(ieDesc, 2, MyVShader, sizeof(MyVShader), &vLayout);
 
+    D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+
+    hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVShader, sizeof(MyMeshVShader), &vMeshLayout);
+
     // create constant buffer
     ZeroMemory(&bDesc, sizeof(bDesc));
     
@@ -310,8 +332,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     bDesc.MiscFlags = 0;
     bDesc.StructureByteStride = 0;
     bDesc.Usage = D3D11_USAGE_DYNAMIC;
-
-    //subData.pSysMem = 0;
 
     hr = myDev->CreateBuffer(&bDesc, nullptr, &cBuff);
 
@@ -324,12 +344,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 
     subData.pSysMem = StoneHenge_data;
+
     hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
+
     //index buffer mesh
     bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    bDesc.ByteWidth = sizeof(StoneHenge_data);
+    bDesc.ByteWidth = sizeof(StoneHenge_indicies);
     subData.pSysMem = StoneHenge_indicies;
-    hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh); 
+    hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh); 
+
+
+
+    //load the vertex shader for the mesh
+    hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
+
 
 
    return TRUE;
