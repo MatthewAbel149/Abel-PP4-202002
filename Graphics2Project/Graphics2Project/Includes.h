@@ -18,4 +18,5 @@ using namespace std;
 #include "MyMeshVShader.csh"
 
 #include "assets/Stonehenge/StoneHenge.h"
+#include "assets/Header models/Pineapple.h"
 //#include "assets/Fruit/Pineapple/Pineapple.obj"

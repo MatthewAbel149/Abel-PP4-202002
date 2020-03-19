@@ -124,7 +124,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         //world
         static float rot = 0; rot += 0.05f; //replace with timer
         XMMATRIX temp = XMMatrixIdentity();
-        temp = XMMatrixTranslation(1, 6, -10);
+        temp = XMMatrixTranslation(-5, 10, -15);
         XMMATRIX temp2 = XMMatrixRotationY(rot);
         temp = XMMatrixMultiply(temp2, temp);
         XMStoreFloat4x4(&myMatrices.wMatrix, temp);
@@ -162,13 +162,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         myCon->IASetInputLayout(vMeshLayout);
 
         temp = XMMatrixIdentity();
+        temp = XMMatrixScaling(.1f, .1f, .1f);
+        //temp = XMMatrixTranslation(-5, 10, -15);
+
         XMStoreFloat4x4(&myMatrices.wMatrix, temp);
         
         myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
         *((WVP*)(gpuBuffer.pData)) = myMatrices;
         myCon->Unmap(cBuff, 0);
         
-        myCon->DrawIndexed(2532, 0, 0);
+        //myCon->DrawIndexed(2532, 0, 0); //stonehenge
+        myCon->DrawIndexed(2742, 0, 0); //pineapple
 
         mySwap->Present(1, 0);
     }
@@ -346,29 +350,29 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     //complex mesh
     bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bDesc.ByteWidth = sizeof(StoneHenge_data);
+    bDesc.ByteWidth = sizeof(Pineapple_data);
     bDesc.CPUAccessFlags = 0;
     bDesc.MiscFlags = 0;
     bDesc.StructureByteStride = 0;
     bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 
-    subData.pSysMem = StoneHenge_data;
+    subData.pSysMem = Pineapple_data;
 
     hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
 
     //index buffer mesh
     bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    bDesc.ByteWidth = sizeof(StoneHenge_indicies);
-    subData.pSysMem = StoneHenge_indicies;
+    bDesc.ByteWidth = sizeof(Pineapple_indicies);
+    subData.pSysMem = Pineapple_indicies;
     hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh); 
 
     //load the vertex shader for the mesh
     hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
 
     D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
     hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVShader, sizeof(MyMeshVShader), &vMeshLayout);
