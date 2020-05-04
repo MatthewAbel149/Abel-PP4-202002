@@ -163,9 +163,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
         temp = XMMatrixIdentity();
         temp = XMMatrixScaling(.1f, .1f, .1f);
+        temp = XMMatrixMultiply(temp2, temp);
         //temp = XMMatrixTranslation(-5, 10, -15);
 
         XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+
+        //view
+        //temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
+        //XMStoreFloat4x4(&myMatrices.vMatrix, temp);
+
+        //projection
+        //temp = XMMatrixPerspectiveFovLH(3.14f / 2.0f, aspectRatio, 0.1f, 1000);
+        //XMStoreFloat4x4(&myMatrices.pMatrix, temp);
         
         myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
         *((WVP*)(gpuBuffer.pData)) = myMatrices;
