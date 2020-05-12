@@ -23,7 +23,7 @@
     <ProjectGuid>{F0C3D8E6-77D8-4CE7-8B18-4A6DE6592472}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Graphics2Project</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
