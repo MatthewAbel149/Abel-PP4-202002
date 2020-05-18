@@ -36,9 +36,18 @@
     <ClInclude Include="glm\glm.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WICTextureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics2Project.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,5 +68,9 @@
     <FxCompile Include="MyVShader.hlsl" />
     <FxCompile Include="MyPShader.hlsl" />
     <FxCompile Include="MyMeshVShader.hlsl" />
+    <FxCompile Include="TextureShader.hlsl" />
+    <FxCompile Include="MyMeshPShader.hlsl">
+      <Filter>Source Files</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -17,6 +17,7 @@ struct MyVertex
     float xyzw[4];
     float rgba[4];
 };
+
 unsigned int numVerts;
 
 ID3D11Buffer* vBuff;
@@ -29,8 +30,13 @@ ID3D11Buffer* cBuff; //shader variables
 ID3D11Buffer* vBuffMesh;
 ID3D11Buffer* iBuffMesh;
 
+ID3D11PixelShader* pMeshShader;
 ID3D11VertexShader* vMeshShader;
 ID3D11InputLayout* vMeshLayout; 
+
+//ID3D11Resource* textureResource; //needed for texturing
+ID3D11ShaderResourceView* srv; //needed for texturing
+
 
 // Z buffer
 ID3D11Texture2D* zBuffer;
@@ -81,6 +87,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_GRAPHICS2PROJECT));
 
     MSG msg;
+
+    ////////////////////////////////////////////
+
+    HRESULT hr;
+
+    //textureView = 0;
+    //textureResource = 0;
+
+    //if (!textureResource && !srv)
+    //hr = CreateDDSTextureFromFile(myDev, myCon, to_wstring(pFilename).c_str(), nullptr, &srv);
+    //hr = DirectX::CreateDDSTextureFromFile(m_Device, m_Context, to_wstring(pFilename).c_str(), nullptr, &srv);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
+    //srv->GetDesc();
+
+    ////////////////////////////////////////////
 
     // Main message loop:
     while (true) //GetMessage(&msg, nullptr, 0, 0))
@@ -159,6 +180,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
         myCon->IASetIndexBuffer(iBuffMesh, DXGI_FORMAT_R32_UINT, 0);
         myCon->VSSetShader(vMeshShader, 0, 0);
+        myCon->PSSetShader(pMeshShader, 0, 0);
         myCon->IASetInputLayout(vMeshLayout);
 
         temp = XMMatrixIdentity();
@@ -179,7 +201,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
         *((WVP*)(gpuBuffer.pData)) = myMatrices;
         myCon->Unmap(cBuff, 0);
-        
+
+		myCon->PSSetShaderResources(0, 1, &srv);
         //myCon->DrawIndexed(2532, 0, 0); //stonehenge
         myCon->DrawIndexed(2742, 0, 0); //pineapple
 
@@ -199,7 +222,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     cBuff->Release();
     vBuffMesh->Release();
     iBuffMesh->Release();
+    pMeshShader->Release();
     vMeshShader->Release();
+    //textureResource->Release();
+    srv->Release();
     zBuffer->Release();
     zBufferView->Release();
     
@@ -357,6 +383,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     hr = myDev->CreateBuffer(&bDesc, nullptr, &cBuff);
 
+	///////////////////////////////////////////////////////
     //complex mesh
     bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     bDesc.ByteWidth = sizeof(Pineapple_data);
@@ -376,7 +403,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh); 
 
     //load the vertex shader for the mesh
+	//myDev->CreateShaderResourceView(nullptr, nullptr, &srv);
+	//myDev->CreateTexture2D();
     hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
+    hr = myDev->CreatePixelShader(MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
 
     D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},

@@ -3,13 +3,13 @@
 struct InputVertex
 {
     float4 xyzw : POSITION;
-    float4 rgba : COLOR;
+    float2 rgba : COLOR;
 };
 
 struct OutputVertex
 {
     float4 xyzw : SV_POSITION;
-    float4 rgba : OCOLOR;
+    float2 rgba : OCOLOR;
 };
 
 cbuffer SHADER_VARS : register(b0)

@@ -15,8 +15,12 @@ using namespace std;
 
 #include "MyPShader.csh"
 #include "MyVShader.csh"
+#include "MyMeshPShader.csh"
 #include "MyMeshVShader.csh"
+
+#include "DDSTextureLoader.h"
 
 #include "assets/Stonehenge/StoneHenge.h"
 #include "assets/Header models/Pineapple.h"
+//#include "assets/Fruit/Pineapple/PineSS00.dds"
 //#include "assets/Fruit/Pineapple/Pineapple.obj"
