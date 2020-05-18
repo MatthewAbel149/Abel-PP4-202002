@@ -99,6 +99,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     //hr = CreateDDSTextureFromFile(myDev, myCon, to_wstring(pFilename).c_str(), nullptr, &srv);
     //hr = DirectX::CreateDDSTextureFromFile(m_Device, m_Context, to_wstring(pFilename).c_str(), nullptr, &srv);
 	hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Palm tree/mt_tree_palm.dds", nullptr, &srv);
     //srv->GetDesc();
 
     ////////////////////////////////////////////
