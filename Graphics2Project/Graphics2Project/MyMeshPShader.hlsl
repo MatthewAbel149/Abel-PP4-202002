@@ -1,5 +1,5 @@
-SamplerState SampleType;
 Texture2D diffuse : register(t0);
+SamplerState sampleType : register(s0);
 
 struct OutputVertex
 {
@@ -11,8 +11,10 @@ struct OutputVertex
 float3 main(OutputVertex inputPixel) : SV_TARGET
 {
 	float4 textureColor;
-	
-	textureColor = diffuse.Sample(SampleType, inputPixel.tex);
+
+
+	textureColor = diffuse.Sample(sampleType, inputPixel.tex);
+	//textureColor.xyzw = float4(3, 3, 112, 1);
 
 	return textureColor;
 }
