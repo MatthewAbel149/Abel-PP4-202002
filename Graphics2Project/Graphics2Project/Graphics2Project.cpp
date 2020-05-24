@@ -94,6 +94,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	MSG msg;
 
+
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
+
 	
 	// Main message loop:
 	while (true) //GetMessage(&msg, nullptr, 0, 0))
@@ -161,6 +164,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		ID3D11Buffer* constants[] = { cBuff };
 		myCon->VSSetConstantBuffers(0, 1, constants);
 
+
 		//Draw
 
 		{
@@ -188,7 +192,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			*((WVP*)(gpuBuffer.pData)) = myMatrices;
 			myCon->Unmap(cBuff, 0);
 
-			hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
 			
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
@@ -202,20 +205,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	//Release all D3D11 interfaces
-	cBuff->Release();
-	myCon->Release();
-	mySwap->Release();
-	myDev->Release();
-	myRtv->Release();
+	
 	vMeshLayout->Release();
 	vBuffMesh->Release();
 	iBuffMesh->Release();
 	pMeshShader->Release();
 	vMeshShader->Release();
 	srv->Release();
+
 	samplerState->Release();
 	zBuffer->Release();
 	zBufferView->Release();
+
+	cBuff->Release();
+	myCon->Release();
+	mySwap->Release();
+	myDev->Release();
+	myRtv->Release();
 
 	return (int)msg.wParam;
 }
@@ -289,7 +295,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	swap.BufferDesc.Height = myWinR.bottom - myWinR.top;
 	swap.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swap.SampleDesc.Count = 1;
-
+	
 	aspectRatio = swap.BufferDesc.Width / float(swap.BufferDesc.Height);
 
 	hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG,

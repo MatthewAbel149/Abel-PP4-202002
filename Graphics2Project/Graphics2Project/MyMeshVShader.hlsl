@@ -10,7 +10,7 @@ struct InputVertex
 struct OutputVertex
 {
     float4 xyzw : SV_POSITION;
-    float3 tex  : OTEXCOORD;
+    float3 uvw  : OTEXCOORD;
 };
 
 cbuffer SHADER_VARS : register(b0)
@@ -24,7 +24,7 @@ OutputVertex main( InputVertex input )
 {
     OutputVertex output = (OutputVertex)0;
     output.xyzw = float4(input.pos, 1);
-    output.tex.xyz = input.uvw;
+    output.uvw.xyz = input.uvw;
 
     output.xyzw = mul(worldMatrix, output.xyzw);
     output.xyzw = mul(viewMatrix,  output.xyzw);
