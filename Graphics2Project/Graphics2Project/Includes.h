@@ -7,9 +7,10 @@
 
 #include <DirectXMath.h>
 using namespace DirectX;
-#include <vector>
 using namespace std;
 #include <iostream>
+
+#include "OBJLoader.h"
 //#include "glm/glm.hpp"
 
 
@@ -20,7 +21,7 @@ using namespace std;
 
 #include "DDSTextureLoader.h"
 
-//#include "assets/Stonehenge/StoneHenge.h"
+#include "assets/Stonehenge/StoneHenge.h"
 #include "assets/Header models/Pineapple.h"
 //#include "assets/Fruit/Pineapple/PineSS00.dds"
 //#include "assets/Fruit/Pineapple/Pineapple.obj"

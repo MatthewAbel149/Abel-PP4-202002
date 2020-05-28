@@ -1,6 +1,8 @@
 // Graphics2Project.cpp : Defines the entry point for the application.
 //
 #include "Includes.h"
+//void LoadModel(CD3D11_BUFFER_DESC&, D3D11_SUBRESOURCE_DATA&, const unsigned int**, const OBJ_VERT**);
+
 
 
 struct MyVertex
@@ -56,6 +58,7 @@ HRESULT hr;
 
 
 
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -95,7 +98,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	MSG msg;
 
 
-	hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
+	//hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srv);
 
 	
 	// Main message loop:
@@ -139,7 +143,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		//world
-		static float rot = 0; rot += 0.05f; //replace with timer
+		static float rot = 0; 
+		//rot += 0.05f; //replace with timer
+
+
 		XMMATRIX temp = XMMatrixIdentity();
 		temp = XMMatrixTranslation(-5, 10, -15);
 		XMMATRIX temp2 = XMMatrixRotationY(rot);
@@ -182,7 +189,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			myCon->IASetInputLayout(vMeshLayout);
 
 			temp = XMMatrixIdentity();
-			temp = XMMatrixScaling(.1f, .1f, .1f);
+			//temp = XMMatrixScaling(.1f, .1f, .1f);
 			temp = XMMatrixMultiply(temp2, temp);
 			//temp = XMMatrixTranslation(-5, 10, -15);
 
@@ -196,7 +203,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srv);
-			myCon->DrawIndexed(2742, 0, 0); //pineapple
+			//myCon->DrawIndexed(2742, 0, 0); //pineapple
+			myCon->DrawIndexed(2532, 0, 0); //pineapple
 		}
 
 
@@ -206,22 +214,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	//Release all D3D11 interfaces
 	
+	cBuff->Release();
+	myCon->Release();
+	mySwap->Release();
+	myDev->Release();
+	myRtv->Release();
 	vMeshLayout->Release();
 	vBuffMesh->Release();
 	iBuffMesh->Release();
 	pMeshShader->Release();
 	vMeshShader->Release();
 	srv->Release();
-
 	samplerState->Release();
 	zBuffer->Release();
 	zBufferView->Release();
 
-	cBuff->Release();
-	myCon->Release();
-	mySwap->Release();
-	myDev->Release();
-	myRtv->Release();
 
 	return (int)msg.wParam;
 }
@@ -322,7 +329,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	//--------------------
 	// create constant buffer
-	ZeroMemory(&bDesc, sizeof(bDesc));
 
 	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bDesc.ByteWidth = sizeof(WVP);
@@ -332,6 +338,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	bDesc.Usage = D3D11_USAGE_DYNAMIC;
 
 	hr = myDev->CreateBuffer(&bDesc, nullptr, &cBuff);
+	
 	//--------------------
 	// Create sampler
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -345,10 +352,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	samplerDesc.MaxLOD = FLT_MAX;
 
 	hr = myDev->CreateSamplerState(&samplerDesc, &samplerState);
-	//--------------------
 
-	//----------------------------------------------------
-	//complex mesh
+
+	/*----------------------------------------------------
+	//complex mesh loading
 		//buffer desc
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bDesc.ByteWidth = sizeof(Pineapple_data);
@@ -357,16 +364,40 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	bDesc.StructureByteStride = 0;
 	bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 
-	subData.pSysMem = Pineapple_data;
+	subData.pSysMem = Pineapple_data; //from header
 
 	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
 
-		//index buffer mesh
+	//index buffer mesh
 	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bDesc.ByteWidth = sizeof(Pineapple_indicies);
 	subData.pSysMem = Pineapple_indicies;
 	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
+	//----------------------------------------------------*/
+	
+	//*----------------------------------------------------
+	//complex mesh loading
+		//buffer desc
+	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bDesc.ByteWidth = sizeof(StoneHenge_data);
+	bDesc.CPUAccessFlags = 0;
+	bDesc.MiscFlags = 0;
+	bDesc.StructureByteStride = 0;
+	bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 
+	subData.pSysMem = StoneHenge_data; //from header
+
+	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
+
+	//index buffer mesh
+	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bDesc.ByteWidth = sizeof(StoneHenge_indicies);
+	subData.pSysMem = StoneHenge_indicies;
+	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
+	//----------------------------------------------------*/
+
+
+	//----------------------------------------------------
 		//shaders
 	hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
 	hr = myDev->CreatePixelShader(MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
@@ -378,6 +409,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	};
 	hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVShader, sizeof(MyMeshVShader), &vMeshLayout);
 	//----------------------------------------------------
+
 		//create Z buffer & view
 	D3D11_TEXTURE2D_DESC zDesc;
 	ZeroMemory(&zDesc, sizeof(zDesc));
@@ -403,6 +435,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 };
 */
+
+
 
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
