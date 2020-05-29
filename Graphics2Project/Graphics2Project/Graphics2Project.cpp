@@ -3,7 +3,7 @@
 #include "Includes.h"
 //void LoadModel(CD3D11_BUFFER_DESC&, D3D11_SUBRESOURCE_DATA&, const unsigned int**, const OBJ_VERT**);
 
-
+using namespace DirectX;
 
 struct MyVertex
 {
@@ -273,6 +273,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
+#pragma region initialization
 	hInst = hInstance; // Store instance handle in our global variable
 
 	HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
@@ -320,6 +321,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	myPort.MinDepth = 0;
 	myPort.MaxDepth = 1;
 
+#pragma endregion
 
 	// load on cardf
 	CD3D11_BUFFER_DESC bDesc;
@@ -353,10 +355,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	hr = myDev->CreateSamplerState(&samplerDesc, &samplerState);
 
-
+#pragma region Custom_Model_Load
 	/*----------------------------------------------------
 	//complex mesh loading
 		//buffer desc
+
+	std::vector<XMFLOAT3> modelVertices;
+	std::vector<XMFLOAT2> modelUVs;
+	std::vector<XMFLOAT3> modelNormals;
+
+	if (LoadOBJ("assets/Fruit/Pineapple/Pineapple.obj", modelVertices, modelUVs, modelNormals))
+	{
+		;
+	}
+
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bDesc.ByteWidth = sizeof(Pineapple_data);
 	bDesc.CPUAccessFlags = 0;
@@ -374,9 +386,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	subData.pSysMem = Pineapple_indicies;
 	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
 	//----------------------------------------------------*/
-	
+#pragma endregion
+
+#pragma region StoneHenge_Model_Data
+
+
 	//*----------------------------------------------------
-	//complex mesh loading
+	//header model loading : StoneHenge
 		//buffer desc
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bDesc.ByteWidth = sizeof(StoneHenge_data);
@@ -395,6 +411,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	subData.pSysMem = StoneHenge_indicies;
 	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
 	//----------------------------------------------------*/
+#pragma endregion 
 
 
 	//----------------------------------------------------

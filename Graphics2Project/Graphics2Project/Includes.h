@@ -22,6 +22,3 @@ using namespace std;
 #include "DDSTextureLoader.h"
 
 #include "assets/Stonehenge/StoneHenge.h"
-#include "assets/Header models/Pineapple.h"
-//#include "assets/Fruit/Pineapple/PineSS00.dds"
-//#include "assets/Fruit/Pineapple/Pineapple.obj"
