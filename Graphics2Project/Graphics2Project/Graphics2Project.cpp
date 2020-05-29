@@ -356,7 +356,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreateSamplerState(&samplerDesc, &samplerState);
 
 #pragma region Custom_Model_Load
-	/*----------------------------------------------------
+	//*----------------------------------------------------
 	//complex mesh loading
 		//buffer desc
 
@@ -366,25 +366,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	if (LoadOBJ("assets/Fruit/Pineapple/Pineapple.obj", modelVertices, modelUVs, modelNormals))
 	{
-		;
-	}
-
+		//glBufferData(GL_ARRAY_BUFFER, modelVertices.size() * sizeof(XMFLOAT3), &modelVertices[0], GL_STATIC_DRAW);
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bDesc.ByteWidth = sizeof(Pineapple_data);
+	bDesc.ByteWidth = sizeof(modelVertices.size() * sizeof(XMFLOAT3));
 	bDesc.CPUAccessFlags = 0;
 	bDesc.MiscFlags = 0;
 	bDesc.StructureByteStride = 0;
 	bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 
-	subData.pSysMem = Pineapple_data; //from header
+	subData.pSysMem = &modelVertices[0]; //from header
 
 	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
 
 	//index buffer mesh
 	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bDesc.ByteWidth = sizeof(Pineapple_indicies);
-	subData.pSysMem = Pineapple_indicies;
+	bDesc.ByteWidth = sizeof(modelVertices.size() * sizeof(XMFLOAT3));
+	subData.pSysMem = &modelVertices[0];
 	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
+	}
+
 	//----------------------------------------------------*/
 #pragma endregion
 

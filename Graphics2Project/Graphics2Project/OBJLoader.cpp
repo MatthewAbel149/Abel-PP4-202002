@@ -7,7 +7,7 @@ bool LoadOBJ(
 	std::vector < DirectX::XMFLOAT3 > &out_normals)
 {
 	FILE* file;
-	fopen_s(&file, filepath, "r");
+	errno_t err = fopen_s(&file, filepath, "r");
 
 	if (file == NULL) {
 		printf("Cannot open file!\n");
@@ -15,7 +15,7 @@ bool LoadOBJ(
 	}
 
 	//model Output will change 
-	OBJ_VERTEX tempVertex;
+	//OBJ_VERTEX tempVertex;
 	std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
 
 	std::vector<DirectX::XMFLOAT3> vertex;
@@ -27,7 +27,8 @@ bool LoadOBJ(
 	while (true)
 	{
 		char lineheader[128];
-		// read the first word of a line
+
+		// read the first word of a line and put it in lineheader
 		int res = fscanf_s(file, "%s", lineheader);
 
 		if (res == EOF)
