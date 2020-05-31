@@ -129,7 +129,7 @@ bool LoadOBJ(
 	for (unsigned int i = 0; i < vertexIndices.size(); ++i)
 	{
 	//	modelDataOutput.allIndexList.push_back({vertexIndices[i] - 1, uvIndices[i] - 1, normalIndices[i] - 1});
-		modelDataOutput.indexList.push_back({vertexIndices[i] - 1});
+		modelDataOutput.indexList.push_back(vertexIndices[i] - 1);
 	}
 
 

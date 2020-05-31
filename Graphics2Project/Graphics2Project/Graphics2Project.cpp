@@ -109,9 +109,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 #pragma endregion
 
+	//hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srv);
 	hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
 
-	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srv);
 
 	// Main message loop:
 	while (true) //GetMessage(&msg, nullptr, 0, 0))
@@ -146,11 +146,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		//world
 		static float rot = 0;
 		//rot += 0.05f; //replace with timer
-
 		XMMATRIX temp = XMMatrixIdentity();
+		
 		temp = XMMatrixTranslation(-5, 10, -15);
-		XMMATRIX temp2 = XMMatrixRotationY(rot);
-		temp = XMMatrixMultiply(temp2, temp);
+		//XMMATRIX temp2 = XMMatrixRotationY(rot);
+		//temp = XMMatrixMultiply(temp2, temp);
 		XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 		//view
@@ -172,8 +172,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		ID3D11Buffer* constants[] = { cBuff };
 		myCon->VSSetConstantBuffers(0, 1, constants);
 
-
-		//Draw
+#pragma region StonehengeDrawCall
+		//*Draw
 		{
 			//------------------- Load stonehenge
 			UINT header_strides[] = { sizeof(_OBJ_VERT_) };
@@ -193,7 +193,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			myCon->IASetInputLayout(vHeaderLayout);
 
 			temp = XMMatrixIdentity();
-			temp = XMMatrixMultiply(temp2, temp);
 			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
@@ -203,20 +202,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srv);
-			//myCon->DrawIndexed(2532, 0, 0); //stonehenge (commented out to ssee pineapple
+			//myCon->DrawIndexed(2532, 0, 0); //stonehenge (commented out to see pineapple
 		}
+		//*/
+#pragma endregion
 
+#pragma region PineappleDrawCall
 		{
 			//*------------------- Load complex mesh
 			//UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
-			UINT mesh_strides[] = { sizeof(XMFLOAT3) };
+			UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
 			UINT mesh_offsets[] = { 0 };
 			ID3D11Buffer* meshVB[] = { vBuffMesh };
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 			myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
-			//myCon->IASetIndexBuffer(iBuffMesh, DXGI_FORMAT_R32G32B32_UINT, 0);
 			myCon->IASetIndexBuffer(iBuffMesh, DXGI_FORMAT_R32_UINT, 0);
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
 			//load the vertex shader for the mesh
@@ -229,8 +230,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			temp = XMMatrixIdentity();
 			temp = XMMatrixScaling(.1f, .1f, .1f);
 			//temp = XMMatrixMultiply(temp2, temp);
-			temp = XMMatrixTranslation(-5, 10, -15);
-
+			//temp = XMMatrixTranslation(-5, 10, -15);
 			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
@@ -241,10 +241,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srv);
 			myCon->DrawIndexed(1086, 0, 0); //pineapple
+			//myCon->DrawIndexed(362, 0, 0); //pineapple
 			//-------------------*/
 		}
+#pragma endregion
 
-		//myCon->DrawIndexed(2532, 0, 0); //stonehenge
 		mySwap->Present(1, 0);
 	}
 
@@ -438,6 +439,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #pragma endregion 
 
 #pragma region Custom_Model_Load
+	
 	//*----------------------------------------------------
 	//complex mesh loading
 		//buffer desc
@@ -445,10 +447,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	OBJ_DATA modelData;
 	if (LoadOBJ("assets/Fruit/Pineapple/Pineapple.obj", &modelData))
 	{
-		//glBufferData(GL_ARRAY_BUFFER, modelVertices.size() * sizeof(XMFLOAT3), &modelVertices[0], GL_STATIC_DRAW);
 		bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		//bDesc.ByteWidth = sizeof(modelData.vertexList/*.size() * sizeof(OBJ_VERTEX)*/);
-		bDesc.ByteWidth = sizeof(modelData.vertexList);
+		bDesc.ByteWidth = modelData.vertexList.size() * sizeof(OBJ_VERTEX);
 		bDesc.CPUAccessFlags = 0;
 		bDesc.MiscFlags = 0;
 		bDesc.StructureByteStride = 0;
@@ -460,11 +460,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 		//index buffer mesh
 		bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		//bDesc.ByteWidth = sizeof(modelData.indexList.size() * sizeof(XMUINT3));
-		bDesc.ByteWidth = sizeof(modelData.indexList);
+		bDesc.ByteWidth = modelData.indexList.size() * sizeof(unsigned int);
 		subData.pSysMem = &modelData.indexList[0];
 		hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
-	}
 	//----------------------------------------------------
 
 
@@ -477,6 +475,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 	hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVShader, sizeof(MyMeshVShader), &vMeshLayout);
+	}
 	//----------------------------------------------------*/
 
 #pragma endregion

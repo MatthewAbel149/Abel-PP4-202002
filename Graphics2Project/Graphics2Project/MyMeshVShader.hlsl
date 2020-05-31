@@ -24,7 +24,7 @@ OutputVertex main( InputVertex input )
 {
     OutputVertex output = (OutputVertex)0;
     output.xyzw = float4(input.pos, 1);
-    output.uv.xy = input.uv;
+    output.uv = input.uv;
 
     output.xyzw = mul(worldMatrix, output.xyzw);
     output.xyzw = mul(viewMatrix,  output.xyzw);
