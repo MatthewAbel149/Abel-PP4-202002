@@ -109,8 +109,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 #pragma endregion
 
-	//hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srv);
-	hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
 
 
 	// Main message loop:
@@ -141,12 +139,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// Rasterizer
 		myCon->RSSetViewports(1, &myPort);
 
-#pragma region matrix setup
+#pragma region camera matrix setup
 
 		//world
 		static float rot = 0;
 		//rot += 0.05f; //replace with timer
 		XMMATRIX temp = XMMatrixIdentity();
+		XMMATRIX temp2 = XMMatrixIdentity();
 		
 		temp = XMMatrixTranslation(-5, 10, -15);
 		//XMMATRIX temp2 = XMMatrixRotationY(rot);
@@ -199,10 +198,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			*((WVP*)(gpuBuffer.pData)) = myMatrices;
 			myCon->Unmap(cBuff, 0);
 
-
+			hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srv);
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srv);
-			//myCon->DrawIndexed(2532, 0, 0); //stonehenge (commented out to see pineapple
+			myCon->DrawIndexed(2532, 0, 0); //stonehenge (commented out to see pineapple
+			srv->Release();
 		}
 		//*/
 #pragma endregion
@@ -228,20 +228,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			myCon->IASetInputLayout(vMeshLayout);
 
 			temp = XMMatrixIdentity();
-			temp = XMMatrixScaling(.1f, .1f, .1f);
+			temp2 = XMMatrixIdentity();
+			//temp2 = XMMatrixTranslation(0, 0, 0);
 			//temp = XMMatrixMultiply(temp2, temp);
-			//temp = XMMatrixTranslation(-5, 10, -15);
+			temp2 = XMMatrixScaling(.2f, .2f, .2f);
+			temp = XMMatrixMultiply(temp2, temp);
+
 			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			*((WVP*)(gpuBuffer.pData)) = myMatrices;
 			myCon->Unmap(cBuff, 0);
 
-
+			hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srv);
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srv);
+			//myCon->DrawIndexed(1086, 0, 0); //pineapple
 			myCon->DrawIndexed(1086, 0, 0); //pineapple
-			//myCon->DrawIndexed(362, 0, 0); //pineapple
+			srv->Release();
 			//-------------------*/
 		}
 #pragma endregion
@@ -270,7 +274,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	vHeaderLayout->Release();
 
 	///
-	srv->Release();
+	//if (srv != nullptr) 
+	//	srv->Release();
+
 	samplerState->Release();
 	zBuffer->Release();
 	zBufferView->Release();

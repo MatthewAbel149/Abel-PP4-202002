@@ -120,18 +120,22 @@ bool LoadOBJ(
 		OBJ_VERTEX tempVertexOutput;
 
 		tempVertexOutput.pos = out_vertices[i];
-		tempVertexOutput.tex = out_uvs[i]; //not enough values. Causes OOB exception
+		tempVertexOutput.tex = out_uvs[i];
 		tempVertexOutput.nrm = out_normals[i];
 
 		modelDataOutput.vertexList.push_back(tempVertexOutput);
 	}
 
-	for (unsigned int i = 0; i < vertexIndices.size(); ++i)
+	/*for (unsigned int i = 0; i < vertexIndices.size(); ++i)
 	{
 	//	modelDataOutput.allIndexList.push_back({vertexIndices[i] - 1, uvIndices[i] - 1, normalIndices[i] - 1});
 		modelDataOutput.indexList.push_back(vertexIndices[i] - 1);
-	}
+	}*/
 
+	for (unsigned int i = 0; i < modelDataOutput.vertexList.size(); ++i)
+	{
+		modelDataOutput.indexList.push_back(i);
+	}
 
 	*modelData = modelDataOutput;
 	return true;
