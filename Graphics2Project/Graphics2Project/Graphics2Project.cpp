@@ -38,12 +38,22 @@ float aspectRatio = 1;
 
 ID3D11Buffer* cBuff; //shader variables
 
+//complex mesh model variables
 ID3D11Buffer* vBuffMesh;
 ID3D11Buffer* iBuffMesh;
-
+//header model variables
+ID3D11Buffer* vBuffHeader;
+ID3D11Buffer* iBuffHeader;
+//TODO: MAKE THE FOLLOWING DATA ARRAYS
+//complex mesh model data
 ID3D11PixelShader* pMeshShader;
 ID3D11VertexShader* vMeshShader;
 ID3D11InputLayout* vMeshLayout;
+
+//header model data
+ID3D11PixelShader*  pHeaderShader;
+ID3D11VertexShader* vHeaderShader;
+ID3D11InputLayout*  vHeaderLayout;
 
 //needed for texturing
 ID3D11ShaderResourceView* srv;
@@ -115,7 +125,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			break;
 
 		// rendering here
-		float color[] = { 0.8f, .8f, .8f, 1.f };
+		float color[] = { 0.0f, .0f, .8f, 1.f };
 		myCon->ClearRenderTargetView(myRtv, color);
 
 		myCon->ClearDepthStencilView(zBufferView, D3D11_CLEAR_DEPTH, 1, 0);
@@ -175,12 +185,49 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		//Draw
 
 		{
+			//------------------- Load stonehenge
 			UINT mesh_strides[] = { sizeof(_OBJ_VERT_) };
+			UINT mesh_offsets[] = { 0 };
+			ID3D11Buffer* meshVB[] = { vBuffHeader };
+
+			myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
+			myCon->IASetIndexBuffer(iBuffHeader, DXGI_FORMAT_R32_UINT, 0);
+			
+			
+			//load the vertex shader for the mesh
+			myCon->VSSetShader(vHeaderShader, 0, 0);
+			//load the pixel shader for the mesh
+			myCon->PSSetShader(pHeaderShader, 0, 0);
+			//load the layout for the mesh
+			myCon->IASetInputLayout(vHeaderLayout);
+
+			temp = XMMatrixIdentity();
+			//temp = XMMatrixScaling(.1f, .1f, .1f);
+			temp = XMMatrixMultiply(temp2, temp);
+			//temp = XMMatrixTranslation(-5, 10, -15);
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+
+			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((WVP*)(gpuBuffer.pData)) = myMatrices;
+			myCon->Unmap(cBuff, 0);
+
+
+			myCon->PSSetSamplers(0, 1, &samplerState);
+			myCon->PSSetShaderResources(0, 1, &srv);
+			myCon->DrawIndexed(2532, 0, 0); //stonehenge
+
+		}
+		{
+			//------------------- Load complex mesh
+			UINT mesh_strides[] = { sizeof(_OBJ_VERTEX_) };
 			UINT mesh_offsets[] = { 0 };
 			ID3D11Buffer* meshVB[] = { vBuffMesh };
 
 			myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
 			myCon->IASetIndexBuffer(iBuffMesh, DXGI_FORMAT_R32_UINT, 0);
+			
+			
 			//load the vertex shader for the mesh
 			myCon->VSSetShader(vMeshShader, 0, 0);
 			//load the pixel shader for the mesh
@@ -199,12 +246,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			*((WVP*)(gpuBuffer.pData)) = myMatrices;
 			myCon->Unmap(cBuff, 0);
 
-			
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srv);
-			//myCon->DrawIndexed(2742, 0, 0); //pineapple
-			myCon->DrawIndexed(2532, 0, 0); //pineapple
+			myCon->DrawIndexed(2742, 0, 0); //pineapple
+			//-------------------
+
+			//myCon->DrawIndexed(2532, 0, 0); //stonehenge
+
 		}
 
 
@@ -219,11 +268,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	mySwap->Release();
 	myDev->Release();
 	myRtv->Release();
-	vMeshLayout->Release();
+	///
 	vBuffMesh->Release();
 	iBuffMesh->Release();
 	pMeshShader->Release();
 	vMeshShader->Release();
+	vMeshLayout->Release();
+
+	vBuffHeader->Release();
+	iBuffHeader->Release();
+	pHeaderShader->Release();
+	vHeaderShader->Release();
+	vHeaderLayout->Release();
+
+	///
 	srv->Release();
 	samplerState->Release();
 	zBuffer->Release();
@@ -379,18 +437,28 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
 
 	//index buffer mesh
-	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bDesc.ByteWidth = sizeof(modelVertices.size() * sizeof(XMFLOAT3));
-	subData.pSysMem = &modelVertices[0];
-	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
+	// bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	// bDesc.ByteWidth = sizeof(modelVertices.size() * sizeof(XMFLOAT3));
+	// subData.pSysMem = &modelVertices[0];
+	// hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
 	}
+	//----------------------------------------------------
 
+
+	hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
+	hr = myDev->CreatePixelShader(MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
+	//layout
+	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0},
+	};
+	hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVShader, sizeof(MyMeshVShader), &vMeshLayout);
 	//----------------------------------------------------*/
+
 #pragma endregion
 
 #pragma region StoneHenge_Model_Data
-
-
 	//*----------------------------------------------------
 	//header model loading : StoneHenge
 		//buffer desc
@@ -403,29 +471,29 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	subData.pSysMem = StoneHenge_data; //from header
 
-	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffMesh);
+	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffHeader);
 
 	//index buffer mesh
 	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bDesc.ByteWidth = sizeof(StoneHenge_indicies);
 	subData.pSysMem = StoneHenge_indicies;
-	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffMesh);
-	//----------------------------------------------------*/
-#pragma endregion 
-
-
+	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffHeader);
+	//----------------------------------------------------
+	
+	
 	//----------------------------------------------------
 		//shaders
-	hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
-	hr = myDev->CreatePixelShader(MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
+	hr = myDev->CreateVertexShader(HeaderVShader, sizeof(HeaderVShader), nullptr, &vHeaderShader);
+	hr = myDev->CreatePixelShader (HeaderPShader, sizeof(HeaderPShader), nullptr, &pHeaderShader);
 		//layout
-	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
+	D3D11_INPUT_ELEMENT_DESC headerInputDesc[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVShader, sizeof(MyMeshVShader), &vMeshLayout);
-	//----------------------------------------------------
+	hr = myDev->CreateInputLayout(headerInputDesc, 3, HeaderVShader, sizeof(HeaderVShader), &vHeaderLayout);
+	//----------------------------------------------------*/
+#pragma endregion 
 
 		//create Z buffer & view
 	D3D11_TEXTURE2D_DESC zDesc;
@@ -443,15 +511,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	return TRUE;
 }
-
-/*OBJLoad() {
-	vector< unsigned int > vertexIndices, uvIndices, normalIndices;
-	vector< glm::vec3 > temp_vertices;
-	vector< glm::vec2 > temp_uvs;
-	vector< glm::vec3 > temp_normals;
-
-};
-*/
 
 
 

@@ -15,10 +15,9 @@ typedef struct _OBJ_VERTEX_ {
 typedef struct _OBJ_DATA_ //needs capacity for multiple vertex/texture vectors
 {
 	std::vector < OBJ_VERTEX> vertexList;
-	std::vector < wchar_t > textureList;
-
-	std::vector< unsigned int> indexList;
-
+	std::vector< DirectX::XMUINT3 > indexList;
+	
+	//std::vector < wchar_t > textureList;
 }OBJ_DATA;
 
 

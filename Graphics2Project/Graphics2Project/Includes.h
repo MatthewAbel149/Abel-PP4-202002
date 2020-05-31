@@ -13,9 +13,10 @@ using namespace std;
 #include "OBJLoader.h"
 //#include "glm/glm.hpp"
 
-
-//#include "MyPShader.csh"
-//#include "MyVShader.csh"
+//header model shaders
+#include "HeaderPShader.csh"
+#include "HeaderVShader.csh"
+//complex mesh shaders
 #include "MyMeshPShader.csh"
 #include "MyMeshVShader.csh"
 
