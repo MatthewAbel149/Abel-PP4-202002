@@ -8,3 +8,4 @@ Documentation
 *.db
 *.opensdf
 *.user
+/Graphics2Project/Graphics2Project/glm/glm.hpp

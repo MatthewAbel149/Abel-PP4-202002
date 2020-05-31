@@ -15,14 +15,11 @@ typedef struct _OBJ_VERTEX_ {
 typedef struct _OBJ_DATA_ //needs capacity for multiple vertex/texture vectors
 {
 	std::vector < OBJ_VERTEX> vertexList;
-	std::vector< DirectX::XMUINT3 > indexList;
-	
-	//std::vector < wchar_t > textureList;
+	//std::vector< DirectX::XMUINT3 > allIndexList;
+	std::vector< unsigned int > indexList;
 }OBJ_DATA;
 
 
 bool LoadOBJ(
 	const char* filepath,
-	std::vector < DirectX::XMFLOAT3 > &out_vertices,
-	std::vector < DirectX::XMFLOAT2 > &out_uvs,
-	std::vector < DirectX::XMFLOAT3 > &out_normals);
+	OBJ_DATA* modelData);

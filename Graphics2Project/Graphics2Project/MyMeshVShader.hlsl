@@ -3,14 +3,14 @@
 struct InputVertex
 {
     float3 pos : POSITION;
-    float3 uvw : TEXCOORD;
+    float2 uv  : TEXCOORD;
     float3 nrm : NORMAL;
 };
 
 struct OutputVertex
 {
     float4 xyzw : SV_POSITION;
-    float3 uvw  : OTEXCOORD;
+    float2 uv  : OTEXCOORD;
 };
 
 cbuffer SHADER_VARS : register(b0)
@@ -24,7 +24,7 @@ OutputVertex main( InputVertex input )
 {
     OutputVertex output = (OutputVertex)0;
     output.xyzw = float4(input.pos, 1);
-    output.uvw.xyz = input.uvw;
+    output.uv.xy = input.uv;
 
     output.xyzw = mul(worldMatrix, output.xyzw);
     output.xyzw = mul(viewMatrix,  output.xyzw);
