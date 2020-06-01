@@ -112,6 +112,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srvList[0]);
 	srvList.push_back(tempSRVData);
 	hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srvList[1]);
+	srvList.push_back(tempSRVData);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Burger King/Tex_0134_0.dds", nullptr, &srvList[2]);
 
 
 	// Main message loop:
@@ -150,13 +152,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		XMMATRIX temp = XMMatrixIdentity();
 		XMMATRIX temp2 = XMMatrixIdentity();
 
-		temp = XMMatrixTranslation(-5, 10, -15);
+		temp = XMMatrixTranslation(/*-5*/0, 10, -15);
 		//XMMATRIX temp2 = XMMatrixRotationY(rot);
 		//temp = XMMatrixMultiply(temp2, temp);
 		XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 		//view
-		temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
+		//temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
+		temp = XMMatrixLookAtLH({ 0,10,-20 }, { 0,0,3 }, { 0,1,0 });
 		XMStoreFloat4x4(&myMatrices.vMatrix, temp);
 
 		//projection
@@ -208,7 +211,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srvList[0]);
-			myCon->DrawIndexed(2532, 0, 0); //stonehenge
+			//myCon->DrawIndexed(2532, 0, 0); //stonehenge
 		}
 		//*/
 #pragma endregion
@@ -252,11 +255,53 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srvList[1]);
-			myCon->DrawIndexed(1086, 0, 0); //pineapple
+			//myCon->DrawIndexed(1086, 0, 0); //pineapple
 			//-------------------*/
 		}
 #pragma endregion
 
+#pragma region THEKINGDrawCall
+		{
+			//*------------------- Load complex mesh
+			UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
+			UINT mesh_offsets[] = { 0 };
+			ID3D11Buffer* meshVB[] = { vBuffList[2] };
+
+			myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
+			myCon->IASetIndexBuffer(iBuffList[2], DXGI_FORMAT_R32_UINT, 0);
+
+
+			//load the vertex shader for the mesh
+			myCon->VSSetShader(vShaderList[0], 0, 0);
+			//load the pixel shader for the mesh
+			myCon->PSSetShader(pShaderList[0], 0, 0);
+			//load the layout for the mesh
+			myCon->IASetInputLayout(layoutList[0]);
+
+			//matrix math
+			temp = XMMatrixIdentity();
+
+			temp2 = XMMatrixTranslation(0, 3, -17);
+			temp = XMMatrixMultiply(temp2, temp);
+
+			temp2 = XMMatrixScaling(1.f, 1.f, 1.f);
+			temp = XMMatrixMultiply(temp2, temp);
+
+			temp2 = XMMatrixRotationY(.95);
+			temp = XMMatrixMultiply(temp2, temp);
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+
+			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((WVP*)(gpuBuffer.pData)) = myMatrices;
+			myCon->Unmap(cBuff, 0);
+
+			myCon->PSSetSamplers(0, 1, &samplerState);
+			myCon->PSSetShaderResources(0, 1, &srvList[2]);
+			myCon->DrawIndexed(34974, 0, 0); //burger king
+			//-------------------*/
+		}
+#pragma endregion
 		mySwap->Present(1, 0);
 	}
 
@@ -461,7 +506,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	//----------------------------------------------------*/
 #pragma endregion 
 
-#pragma region Custom_Model_Load
+#pragma region Pineapple
 
 	//*----------------------------------------------------
 	//complex mesh loading
@@ -498,6 +543,38 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		vShaderList.push_back(tempVShaderData);
 
 		hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vShaderList[0]);
+
+	}
+	//----------------------------------------------------*/
+
+#pragma endregion
+
+#pragma region Burgr
+
+//*----------------------------------------------------
+//complex mesh loading
+	//buffer desc
+
+	if (LoadOBJ("assets/Burger King/burgerking.obj", &modelData))
+	{
+		bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bDesc.ByteWidth = modelData.vertexList.size() * sizeof(OBJ_VERTEX);
+		bDesc.CPUAccessFlags = 0;
+		bDesc.MiscFlags = 0;
+		bDesc.StructureByteStride = 0;
+		bDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		subData.pSysMem = modelData.vertexList.data();
+
+		vBuffList.push_back(tempBufferData);
+		hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffList[2]);
+
+		//index buffer mesh
+		bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		bDesc.ByteWidth = modelData.indexList.size() * sizeof(unsigned int);
+		subData.pSysMem = modelData.indexList.data();
+
+		iBuffList.push_back(tempBufferData);
+		hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffList[2]);
 
 	}
 	//----------------------------------------------------*/
