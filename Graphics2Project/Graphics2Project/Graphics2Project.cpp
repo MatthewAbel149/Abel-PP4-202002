@@ -107,13 +107,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 #pragma endregion
 
-	ID3D11ShaderResourceView* tempSRVData;
-	srvList.push_back(tempSRVData);
-	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srvList[0]);
-	srvList.push_back(tempSRVData);
-	hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srvList[1]);
-	srvList.push_back(tempSRVData);
-	hr = CreateDDSTextureFromFile(myDev, L"assets/Burger King/Tex_0134_0.dds", nullptr, &srvList[2]);
+
 
 
 	// Main message loop:
@@ -144,7 +138,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// Rasterizer
 		myCon->RSSetViewports(1, &myPort);
 
-#pragma region camera matrix setup
+#pragma region camera setup
 
 		//world
 		static float rot = 0;
@@ -152,21 +146,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		XMMATRIX temp = XMMatrixIdentity();
 		XMMATRIX temp2 = XMMatrixIdentity();
 
-		temp = XMMatrixTranslation(/*-5*/0, 10, -15);
-		//XMMATRIX temp2 = XMMatrixRotationY(rot);
-		//temp = XMMatrixMultiply(temp2, temp);
+		temp = XMMatrixTranslation(-5, 10, -15);
 		XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
+#pragma region camera movement
+
 		//view
-		//temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
-		temp = XMMatrixLookAtLH({ 0,10,-20 }, { 0,0,3 }, { 0,1,0 });
+		temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
+		//temp = XMMatrixLookAtLH({ 0,10,-20 }, { 0,0,3 }, { 0,1,0 });
 		XMStoreFloat4x4(&myMatrices.vMatrix, temp);
+
+		temp = XMMatrixMultiply(temp2, temp);
+
+#pragma endregion
 
 		//projection
 		temp = XMMatrixPerspectiveFovLH(3.14f / 2.0f, aspectRatio, 0.1f, 1000);
 		XMStoreFloat4x4(&myMatrices.pMatrix, temp);
 
 #pragma endregion
+
+
 
 		D3D11_MAPPED_SUBRESOURCE gpuBuffer;
 		myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
@@ -211,7 +211,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srvList[0]);
-			//myCon->DrawIndexed(2532, 0, 0); //stonehenge
+			myCon->DrawIndexed(2532, 0, 0); //stonehenge
 		}
 		//*/
 #pragma endregion
@@ -238,7 +238,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//matrix math
 			temp = XMMatrixIdentity();
 
-			temp2 = XMMatrixTranslation(0, 10, 0);
+			temp2 = XMMatrixTranslation(-5, 10, 0);
 			temp = XMMatrixMultiply(temp2, temp);
 
 			temp2 = XMMatrixScaling(.1f, .1f, .1f);
@@ -255,7 +255,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srvList[1]);
-			//myCon->DrawIndexed(1086, 0, 0); //pineapple
+			myCon->DrawIndexed(1086, 0, 0); //pineapple
 			//-------------------*/
 		}
 #pragma endregion
@@ -270,7 +270,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
 			myCon->IASetIndexBuffer(iBuffList[2], DXGI_FORMAT_R32_UINT, 0);
 
-
 			//load the vertex shader for the mesh
 			myCon->VSSetShader(vShaderList[0], 0, 0);
 			//load the pixel shader for the mesh
@@ -279,15 +278,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			myCon->IASetInputLayout(layoutList[0]);
 
 			//matrix math
+			static float burgerRot = 0;
+
+			if (GetAsyncKeyState(VK_LBUTTON))
+				burgerRot += .1f;
+
 			temp = XMMatrixIdentity();
 
-			temp2 = XMMatrixTranslation(0, 3, -17);
+			temp2 = XMMatrixTranslation(0, 3, 8);
 			temp = XMMatrixMultiply(temp2, temp);
 
-			temp2 = XMMatrixScaling(1.f, 1.f, 1.f);
-			temp = XMMatrixMultiply(temp2, temp);
+			//temp2 = XMMatrixScaling(1.f, 1.f, 1.f);
+			//temp = XMMatrixMultiply(temp2, temp);
 
-			temp2 = XMMatrixRotationY(.95);
+			temp2 = XMMatrixRotationY(burgerRot);
 			temp = XMMatrixMultiply(temp2, temp);
 
 			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
@@ -447,6 +451,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	ID3D11PixelShader* tempPShaderData;
 	ID3D11VertexShader* tempVShaderData;
 	ID3D11InputLayout* tempLayoutData;
+	ID3D11ShaderResourceView* tempSRVData;
 
 	// load on cardf
 	CD3D11_BUFFER_DESC bDesc;
@@ -503,6 +508,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	iBuffList.push_back(tempBufferData);
 	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffList[0]);
 
+	srvList.push_back(tempSRVData);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srvList[0]);
 	//----------------------------------------------------*/
 #pragma endregion 
 
@@ -544,6 +551,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 		hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vShaderList[0]);
 
+		srvList.push_back(tempSRVData);
+		hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srvList[1]);
 	}
 	//----------------------------------------------------*/
 
@@ -576,6 +585,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		iBuffList.push_back(tempBufferData);
 		hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffList[2]);
 
+		srvList.push_back(tempSRVData);
+		hr = CreateDDSTextureFromFile(myDev, L"assets/Burger King/Tex_0134_0.dds", nullptr, &srvList[2]);
 	}
 	//----------------------------------------------------*/
 

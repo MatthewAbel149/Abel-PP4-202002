@@ -23,7 +23,7 @@ bool LoadOBJ(
 	std::vector<DirectX::XMFLOAT3> out_vertices;
 	std::vector<DirectX::XMFLOAT3> out_uvs;
 	std::vector<DirectX::XMFLOAT3> out_normals;
-	//std::vector<char*> materialList;
+	char material [128] = "";
 
 
 	while (true)
@@ -60,12 +60,10 @@ bool LoadOBJ(
 			normal.push_back(temp_normal);
 		}
 
-		// else if (strcmp(lineheader, "usemtl") == 0)
-		// {
-		// 	char materialName[128] = "";
-		// 	fscanf_s(file, "%s\n", &materialName, _countof(materialName));
-		// 	materialList.push_back(materialName);
-		// }
+		else if (strcmp(lineheader, "usemtl") == 0)
+		{
+			fscanf_s(file, "%s\n", &material, _countof(material));
+		}
 
 		else if (strcmp(lineheader, "f") == 0)
 		{

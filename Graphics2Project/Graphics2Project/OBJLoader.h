@@ -16,6 +16,8 @@ typedef struct _OBJ_DATA_
 {
 	std::vector < OBJ_VERTEX> vertexList;
 	std::vector< unsigned int > indexList;
+	char material [128];
+
 }OBJ_DATA;
 
 
