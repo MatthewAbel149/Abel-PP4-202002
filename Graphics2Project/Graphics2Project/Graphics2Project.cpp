@@ -468,7 +468,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		//buffer desc
 
 	OBJ_DATA modelData;
-	if (LoadOBJ_Indexed("assets/Fruit/Pineapple/Pineapple.obj", &modelData))
+	if (LoadOBJ("assets/Fruit/Pineapple/Pineapple.obj", &modelData))
 	{
 		bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bDesc.ByteWidth = modelData.vertexList.size() * sizeof(OBJ_VERTEX);

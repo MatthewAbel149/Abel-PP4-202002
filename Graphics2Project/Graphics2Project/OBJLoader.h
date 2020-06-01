@@ -15,15 +15,10 @@ typedef struct _OBJ_VERTEX_ {
 typedef struct _OBJ_DATA_
 {
 	std::vector < OBJ_VERTEX> vertexList;
-	//std::vector< DirectX::XMUINT3 > allIndexList; //Not used currently
 	std::vector< unsigned int > indexList;
 }OBJ_DATA;
 
 
 bool LoadOBJ(
-	const char* filepath,
-	OBJ_DATA* modelData);
-
-bool LoadOBJ_Indexed(
 	const char* filepath,
 	OBJ_DATA* modelData);
