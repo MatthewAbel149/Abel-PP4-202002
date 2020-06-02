@@ -106,7 +106,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 
-
+	int scene = 0;
 
 	// Main message loop:
 	while (true) //GetMessage(&msg, nullptr, 0, 0))
@@ -136,6 +136,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// Rasterizer
 		myCon->RSSetViewports(1, &myPort);
 
+
 #pragma region camera setup
 
 		//world
@@ -163,8 +164,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 #pragma endregion
 
-
-
 		D3D11_MAPPED_SUBRESOURCE gpuBuffer;
 		myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 		*((WVP*)(gpuBuffer.pData)) = myMatrices;
@@ -173,170 +172,148 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		ID3D11Buffer* constants[] = { cBuff };
 		myCon->VSSetConstantBuffers(0, 1, constants);
+		
+		if (GetAsyncKeyState(VK_LBUTTON) & 1) scene += 1;
+		if (scene == 3) scene -= 3;
 
+
+	if (scene == 0) {
 #pragma region StonehengeDrawCall
-		//*Draw
-		{
-			//------------------- Load stonehenge
-			UINT header_strides[] = { sizeof(_OBJ_VERT_) };
-			UINT header_offsets[] = { 0 };
-			ID3D11Buffer* headerVB[] = { vBuffHeader };
+			//*Draw
+			{
+				//------------------- Load stonehenge
+				UINT header_strides[] = { sizeof(_OBJ_VERT_) };
+				UINT header_offsets[] = { 0 };
+				ID3D11Buffer* headerVB[] = { vBuffHeader };
 
-			myCon->IASetVertexBuffers(0, 1, headerVB, header_strides, header_offsets);
-			myCon->IASetIndexBuffer(iBuffHeader, DXGI_FORMAT_R32_UINT, 0);
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				myCon->IASetVertexBuffers(0, 1, headerVB, header_strides, header_offsets);
+				myCon->IASetIndexBuffer(iBuffHeader, DXGI_FORMAT_R32_UINT, 0);
+				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-			//load the vertex shader for the mesh
-			myCon->VSSetShader(vMeshShader, 0, 0);
-			//load the pixel shader for the mesh
-			myCon->PSSetShader(pMeshShader, 0, 0);
-			//load the layout for the mesh
-			myCon->IASetInputLayout(layoutVert);
+				//load the vertex shader for the mesh
+				myCon->VSSetShader(vMeshShader, 0, 0);
+				//load the pixel shader for the mesh
+				myCon->PSSetShader(pMeshShader, 0, 0);
+				//load the layout for the mesh
+				myCon->IASetInputLayout(layoutVert);
 
-			temp = XMMatrixIdentity();
-			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+				temp = XMMatrixIdentity();
+				XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
-			temp2 = XMMatrixScaling(.9f, .9f, .9f);
-			temp = XMMatrixMultiply(temp2, temp);
+				myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+				*((WVP*)(gpuBuffer.pData)) = myMatrices;
+				myCon->Unmap(cBuff, 0);
 
-			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
-
-			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			*((WVP*)(gpuBuffer.pData)) = myMatrices;
-			myCon->Unmap(cBuff, 0);
-
-			myCon->PSSetSamplers(0, 1, &samplerState);
-			myCon->PSSetShaderResources(0, 1, &srvHeader);
-			//myCon->DrawIndexed(2532, 0, 0); //stonehenge
-		}
-		//*/
+				myCon->PSSetSamplers(0, 1, &samplerState);
+				myCon->PSSetShaderResources(0, 1, &srvHeader);
+				myCon->DrawIndexed(2532, 0, 0); //stonehenge
+			}
+			//*/
 #pragma endregion
 
-#pragma region PineappleDrawCall
-		{
-			//*------------------- Load complex mesh
-			//matrix math
-			temp = XMMatrixIdentity();
+#pragma region King
+			{
+				//matrix math
+				static float burgerRot = 0;
 
-			temp2 = XMMatrixTranslation(-5, 10, 0);
-			temp = XMMatrixMultiply(temp2, temp);
+				if (GetAsyncKeyState('K'))
+					burgerRot += .1f;
 
-			temp2 = XMMatrixScaling(.1f, .1f, .1f);
-			temp = XMMatrixMultiply(temp2, temp);
+				temp = XMMatrixIdentity();
 
-			temp2 = XMMatrixRotationY(rot);
-			temp = XMMatrixMultiply(temp2, temp);
+				temp2 = XMMatrixTranslation(0, 3, 8);
+				temp = XMMatrixMultiply(temp2, temp);
+				
+				if (GetAsyncKeyState('B'))
+				{
+					temp2 = XMMatrixScaling(2.f, 2.f, 2.f);
+					temp = XMMatrixMultiply(temp2, temp);
+				}
 
-			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+				temp2 = XMMatrixRotationY(burgerRot);
+				temp = XMMatrixMultiply(temp2, temp);
 
+				XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
-			UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
-			UINT mesh_offsets[] = { 0 };
-			ID3D11Buffer* meshVB[] = { vBuffList[1] };
-
-			myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
-			myCon->IASetIndexBuffer(iBuffList[1], DXGI_FORMAT_R32_UINT, 0);
-			//myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-
-			//load the vertex shader for the mesh
-			myCon->VSSetShader(vShaderList[0], 0, 0);
-			//load the pixel shader for the mesh
-			myCon->PSSetShader(pShaderList[0], 0, 0);
-			//load the layout for the mesh
-			myCon->IASetInputLayout(layoutList[0]);
-
-
-			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			*((WVP*)(gpuBuffer.pData)) = myMatrices;
-			myCon->Unmap(cBuff, 0);
-
-			myCon->PSSetSamplers(0, 1, &samplerState);
-			myCon->PSSetShaderResources(0, 1, &srvList[1]);
-			//myCon->DrawIndexed(1086, 0, 0); //pineapple
-			//-------------------*/
-		}
+				DisplayModel(
+					&modelList[1],
+					samplerState,
+					cBuff,
+					myCon,
+					&gpuBuffer,
+					pMeshShader,
+					vMeshShader,
+					layoutVert,
+					myMatrices);
+			}
 #pragma endregion
+	}
 
-#pragma region THEKINGDrawCall
-		{
-			//*------------------- Load complex mesh
-			UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
-			UINT mesh_offsets[] = { 0 };
-			ID3D11Buffer* meshVB[] = { vBuffList[2] };
 
-			myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
-			myCon->IASetIndexBuffer(iBuffList[2], DXGI_FORMAT_R32_UINT, 0);
+	if (scene == 1) {
+#pragma region Pineapple
+			{
+				//*------------------- Load complex mesh
+				//matrix math
+				temp = XMMatrixIdentity();
 
-			//load the vertex shader for the mesh
-			myCon->VSSetShader(vShaderList[0], 0, 0);
-			//load the pixel shader for the mesh
-			myCon->PSSetShader(pShaderList[0], 0, 0);
-			//load the layout for the mesh
-			myCon->IASetInputLayout(layoutList[0]);
+				temp2 = XMMatrixTranslation(-5, 10, 0);
+				temp = XMMatrixMultiply(temp2, temp);
 
-			//matrix math
-			static float burgerRot = 0;
+				temp2 = XMMatrixScaling(.1f, .1f, .1f);
+				temp = XMMatrixMultiply(temp2, temp);
 
-			if (GetAsyncKeyState(VK_LBUTTON))
-				burgerRot += .1f;
+				temp2 = XMMatrixRotationY(rot);
+				temp = XMMatrixMultiply(temp2, temp);
 
-			temp = XMMatrixIdentity();
+				XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
-			temp2 = XMMatrixTranslation(0, 3, 8);
-			temp = XMMatrixMultiply(temp2, temp);
 
-			//temp2 = XMMatrixScaling(1.f, 1.f, 1.f);
-			//temp = XMMatrixMultiply(temp2, temp);
-
-			temp2 = XMMatrixRotationY(burgerRot);
-			temp = XMMatrixMultiply(temp2, temp);
-
-			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
-
-			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			*((WVP*)(gpuBuffer.pData)) = myMatrices;
-			myCon->Unmap(cBuff, 0);
-
-			myCon->PSSetSamplers(0, 1, &samplerState);
-			myCon->PSSetShaderResources(0, 1, &srvList[2]);
-			//myCon->DrawIndexed(34974, 0, 0); //burger king
-			//-------------------*/
-		}
+				DisplayModel(
+					&modelList[0],
+					samplerState,
+					cBuff,
+					myCon,
+					&gpuBuffer,
+					pMeshShader,
+					vMeshShader,
+					layoutVert,
+					myMatrices);
+			}
 #pragma endregion
+	}
 
+
+	if (scene == 2) {
 #pragma region Planet
 
-		//TODO: make into as few calls as possible
+			//matrix math
+			temp = XMMatrixIdentity();
+
+			temp2 = XMMatrixTranslation(0, 16, 14);
+			temp = XMMatrixMultiply(temp2, temp);
+
+			temp2 = XMMatrixRotationY(rot / 10);
+			temp = XMMatrixMultiply(temp2, temp);
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 
-
-		//matrix math
-		temp = XMMatrixIdentity();
-
-		temp2 = XMMatrixTranslation(0, 16, 14);
-		temp = XMMatrixMultiply(temp2, temp);
-
-		temp2 = XMMatrixRotationY(rot / 10);
-		temp = XMMatrixMultiply(temp2, temp);
-
-		XMStoreFloat4x4(&myMatrices.wMatrix, temp);
-
-
-
-		DisplayModel(
-			&modelList[0], 
-			samplerState, 
-			cBuff, 
-			myCon, 
-			&gpuBuffer, 
-			pMeshShader, 
-			vMeshShader, 
-			layoutVert, 
-			myMatrices);
+			DisplayModel(
+				&modelList[2],
+				samplerState,
+				cBuff,
+				myCon,
+				&gpuBuffer,
+				pMeshShader,
+				vMeshShader,
+				layoutVert,
+				myMatrices);
 
 #pragma endregion
+	}
+
 		mySwap->Present(1, 0);
 	}
 
@@ -367,10 +344,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	samplerState->Release();
 	zBuffer->Release();
 	zBufferView->Release();
-	for (unsigned int i = 0; i < modelList.size(); ++i)
-	{
-		modelList[i]
 
+	for (unsigned int i = 0; i < modelList.size(); ++i) 
+	{ 
+		modelList[i].iBufferData->Release();
+		modelList[i].vBufferData->Release();
+		modelList[i].srvData->Release();
 	}
 
 	return (int)msg.wParam;
@@ -468,13 +447,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	MODEL_DATA tempModel;
 
-	ID3D11Buffer* tempBufferData;
-	ID3D11PixelShader* tempPShaderData;
-	ID3D11VertexShader* tempVShaderData;
-	ID3D11InputLayout* tempLayoutData;
-	ID3D11ShaderResourceView* tempSRVData;
-
 	const wchar_t* texturePath = { L"assets/Dinosaur Planet/MODELS.bin.001.000.dds" };
+	texturePath = { L"assets/Fruit/Pineapple/PineSS00.dds" };
+	//texturePath = { L"assets/Dinosaur Planet/MODELS.bin.001.000.dds" };
+
+
 
 
 	// load on cardf
@@ -538,76 +515,29 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 #pragma region Pineapple
 
-	//*----------------------------------------------------
-	//complex mesh loading
-		//buffer desc
-
-	OBJ_DATA modelData;
-	if (LoadOBJ("assets/Fruit/Pineapple/Pineapple.obj", &modelData))
-	{
-		bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		bDesc.ByteWidth = modelData.vertexList.size() * sizeof(OBJ_VERTEX);
-		bDesc.CPUAccessFlags = 0;
-		bDesc.MiscFlags = 0;
-		bDesc.StructureByteStride = 0;
-		bDesc.Usage = D3D11_USAGE_IMMUTABLE;
-		subData.pSysMem = modelData.vertexList.data();
-
-		vBuffList.push_back(tempBufferData);
-		hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffList[1]);
-
-		//index buffer mesh
-		bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		bDesc.ByteWidth = modelData.indexList.size() * sizeof(unsigned int);
-		subData.pSysMem = modelData.indexList.data();
-
-		iBuffList.push_back(tempBufferData);
-		hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffList[1]);
-		
-		//----------------------------------------------------
-		//Shaders
-
-		hr = myDev->CreatePixelShader(MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
-
-		hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
-
-		hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srvList[1]);
-	}
-	//----------------------------------------------------*/
-
+	LoadOBJ(
+		"assets/Fruit/Pineapple/Pineapple.obj",
+		L"assets/Fruit/Pineapple/PineSS00.dds",
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+	modelList.push_back(tempModel);
+	
 #pragma endregion
 
 #pragma region King
 
-//*----------------------------------------------------
-//complex mesh loading
-	//buffer desc
-
-	if (LoadOBJ("assets/Burger King/burgerking.obj", &modelData))
-	{
-		bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		bDesc.ByteWidth = modelData.vertexList.size() * sizeof(OBJ_VERTEX);
-		bDesc.CPUAccessFlags = 0;
-		bDesc.MiscFlags = 0;
-		bDesc.StructureByteStride = 0;
-		bDesc.Usage = D3D11_USAGE_IMMUTABLE;
-		subData.pSysMem = modelData.vertexList.data();
-
-		vBuffList.push_back(tempBufferData);
-		hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffList[2]);
-
-		//index buffer mesh
-		bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		bDesc.ByteWidth = modelData.indexList.size() * sizeof(unsigned int);
-		subData.pSysMem = modelData.indexList.data();
-
-		iBuffList.push_back(tempBufferData);
-		hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffList[2]);
-
-		srvList.push_back(tempSRVData);
-		hr = CreateDDSTextureFromFile(myDev, L"assets/Burger King/Tex_0134_0.dds", nullptr, &srvList[2]);
-	}
-	//----------------------------------------------------*/
+	LoadOBJ(
+		"assets/Burger King/burgerking.obj",
+		L"assets/Burger King/Tex_0134_0.dds",
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+	modelList.push_back(tempModel);
 
 #pragma endregion
 
@@ -615,15 +545,19 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	
 	LoadOBJ(
 		"assets/Dinosaur Planet/Dinosaur Planet (World Map).obj",
-		texturePath,
+		L"assets/Dinosaur Planet/MODELS.bin.001.000.dds",
 		&tempModel,
 		&bDesc,
 		&subData,
-		&myDev
+		myDev
 	);
 	modelList.push_back(tempModel);
+
 #pragma endregion
 
+
+	hr = myDev->CreatePixelShader(&MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
+	hr = myDev->CreateVertexShader(&MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
 
 	//layout
 	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {

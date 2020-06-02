@@ -30,7 +30,7 @@ typedef struct _OBJ_DATA_
 {
 	std::vector < OBJ_VERTEX> vertexList;
 	std::vector< unsigned int > indexList;
-	char material [128];
+	char material [128] = "";
 
 }OBJ_DATA;
 
@@ -43,6 +43,7 @@ typedef struct _MODEL_DATA_
 	ID3D11ShaderResourceView* srvData	= nullptr;
 	ID3D11Buffer* iBufferData			= nullptr;
 	ID3D11Buffer* vBufferData			= nullptr;
+
 }MODEL_DATA;
 
 

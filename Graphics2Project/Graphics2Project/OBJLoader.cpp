@@ -142,33 +142,39 @@ bool LoadOBJ(
 	D3D11_SUBRESOURCE_DATA* subData,
 	ID3D11Device* myDev) 
 {
+
+	HRESULT hr;
+
 	OBJ_DATA OBJData;
-	LoadOBJ(modelPath, &OBJData);
+	if (LoadOBJ(modelPath, &OBJData))
+	{
 
-	modelData->vertexList = OBJData.vertexList;
-	modelData->indexList = OBJData.indexList;
+		modelData->vertexList = OBJData.vertexList;
+		modelData->indexList = OBJData.indexList;
 
 
-	bDesc->BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bDesc->ByteWidth = modelData->vertexList.size() * sizeof(OBJ_VERTEX);
-	bDesc->CPUAccessFlags = 0;
-	bDesc->MiscFlags = 0;
-	bDesc->StructureByteStride = 0;
-	bDesc->Usage = D3D11_USAGE_IMMUTABLE;
-	subData->pSysMem = modelData->vertexList.data();
+		bDesc->BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bDesc->ByteWidth = modelData->vertexList.size() * sizeof(OBJ_VERTEX);
+		bDesc->CPUAccessFlags = 0;
+		bDesc->MiscFlags = 0;
+		bDesc->StructureByteStride = 0;
+		bDesc->Usage = D3D11_USAGE_IMMUTABLE;
+		subData->pSysMem = modelData->vertexList.data();
 
-	myDev->CreateBuffer(bDesc, subData, &(modelData->vBufferData));
+		hr = myDev->CreateBuffer(bDesc, subData, &(modelData->vBufferData));
 
-	//index buffer mesh
-	bDesc->BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bDesc->ByteWidth = modelData->indexList.size() * sizeof(unsigned int);
-	subData->pSysMem = modelData->indexList.data();
+		//index buffer mesh
+		bDesc->BindFlags = D3D11_BIND_INDEX_BUFFER;
+		bDesc->ByteWidth = modelData->indexList.size() * sizeof(unsigned int);
+		subData->pSysMem = modelData->indexList.data();
 
-	myDev->CreateBuffer(bDesc, subData, &(modelData->iBufferData));
+		hr = myDev->CreateBuffer(bDesc, subData, &(modelData->iBufferData));
 
-	CreateDDSTextureFromFile(myDev, texturePath, nullptr, &(modelData->srvData));
-	
-	return true;
+		hr = CreateDDSTextureFromFile(myDev, texturePath, nullptr, &(modelData->srvData));
+
+		return true;
+	}
+	else return false;
 }
 
 
