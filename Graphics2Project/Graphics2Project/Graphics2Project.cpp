@@ -3,6 +3,8 @@
 #include "Includes.h"
 //void LoadModel(CD3D11_BUFFER_DESC&, D3D11_SUBRESOURCE_DATA&, const unsigned int**, const OBJ_VERT**);
 
+//#define SAFEDELETE(*ptr) if(ptr) { ptr. }
+
 using namespace DirectX;
 using namespace std;
 
@@ -16,11 +18,7 @@ struct MyVertex
 unsigned int numVerts;
 
 // Math Stuff
-struct WVP {
-	XMFLOAT4X4 wMatrix;
-	XMFLOAT4X4 vMatrix;
-	XMFLOAT4X4 pMatrix;
-} myMatrices;
+WVP myMatrices; //WVP struct was here
 
 //ID3D11Buffer* vBuff;
 //ID3D11InputLayout* vLayout;
@@ -36,25 +34,25 @@ ID3D11RenderTargetView* myRtv;
 D3D11_VIEWPORT myPort;
 float aspectRatio = 1;
 
-/////////////////////////////////////////////
-//TODO: MAKE THE FOLLOWING DATA VECTORS
-/////////////////////////////////////////////
 
 ID3D11Buffer* cBuff; //shader variables
 //complex mesh model variables
-vector<ID3D11Buffer*> vBuffList;
-vector<ID3D11Buffer*> iBuffList;
+ID3D11Buffer* vBuffHeader;
+ID3D11Buffer* iBuffHeader;
 //header model variables
 //ID3D11Buffer* vBuffHeader;
 //ID3D11Buffer* iBuffHeader;
 
 //complex mesh model data
-vector<ID3D11PixelShader* > pShaderList;
-vector<ID3D11VertexShader*> vShaderList;
-vector<ID3D11InputLayout* > layoutList;
+ID3D11PixelShader* pMeshShader;
+ID3D11VertexShader* vMeshShader;
+ID3D11InputLayout* layoutVert;
+
+
+vector< MODEL_DATA > modelList;
 
 //needed for texturing
-vector<ID3D11ShaderResourceView*> srvList;
+ID3D11ShaderResourceView* srvHeader;
 ID3D11SamplerState* samplerState;
 D3D11_SAMPLER_DESC samplerDesc;
 
@@ -145,7 +143,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		rot += 0.05f; //replace with timer
 		XMMATRIX temp = XMMatrixIdentity();
 		XMMATRIX temp2 = XMMatrixIdentity();
-
 		temp = XMMatrixTranslation(-5, 10, -15);
 		XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
@@ -183,19 +180,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//------------------- Load stonehenge
 			UINT header_strides[] = { sizeof(_OBJ_VERT_) };
 			UINT header_offsets[] = { 0 };
-			ID3D11Buffer* headerVB[] = { vBuffList[0] };
+			ID3D11Buffer* headerVB[] = { vBuffHeader };
 
 			myCon->IASetVertexBuffers(0, 1, headerVB, header_strides, header_offsets);
-			myCon->IASetIndexBuffer(iBuffList[0], DXGI_FORMAT_R32_UINT, 0);
+			myCon->IASetIndexBuffer(iBuffHeader, DXGI_FORMAT_R32_UINT, 0);
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
 			//load the vertex shader for the mesh
-			myCon->VSSetShader(vShaderList[0], 0, 0);
+			myCon->VSSetShader(vMeshShader, 0, 0);
 			//load the pixel shader for the mesh
-			myCon->PSSetShader(pShaderList[0], 0, 0);
+			myCon->PSSetShader(pMeshShader, 0, 0);
 			//load the layout for the mesh
-			myCon->IASetInputLayout(layoutList[0]);
+			myCon->IASetInputLayout(layoutVert);
 
 			temp = XMMatrixIdentity();
 			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
@@ -210,8 +207,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			myCon->Unmap(cBuff, 0);
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
-			myCon->PSSetShaderResources(0, 1, &srvList[0]);
-			myCon->DrawIndexed(2532, 0, 0); //stonehenge
+			myCon->PSSetShaderResources(0, 1, &srvHeader);
+			//myCon->DrawIndexed(2532, 0, 0); //stonehenge
 		}
 		//*/
 #pragma endregion
@@ -219,6 +216,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma region PineappleDrawCall
 		{
 			//*------------------- Load complex mesh
+			//matrix math
+			temp = XMMatrixIdentity();
+
+			temp2 = XMMatrixTranslation(-5, 10, 0);
+			temp = XMMatrixMultiply(temp2, temp);
+
+			temp2 = XMMatrixScaling(.1f, .1f, .1f);
+			temp = XMMatrixMultiply(temp2, temp);
+
+			temp2 = XMMatrixRotationY(rot);
+			temp = XMMatrixMultiply(temp2, temp);
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+
+
 			UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
 			UINT mesh_offsets[] = { 0 };
 			ID3D11Buffer* meshVB[] = { vBuffList[1] };
@@ -235,19 +247,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//load the layout for the mesh
 			myCon->IASetInputLayout(layoutList[0]);
 
-			//matrix math
-			temp = XMMatrixIdentity();
-
-			temp2 = XMMatrixTranslation(-5, 10, 0);
-			temp = XMMatrixMultiply(temp2, temp);
-
-			temp2 = XMMatrixScaling(.1f, .1f, .1f);
-			temp = XMMatrixMultiply(temp2, temp);
-
-			temp2 = XMMatrixRotationY(rot);
-			temp = XMMatrixMultiply(temp2, temp);
-
-			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 			myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			*((WVP*)(gpuBuffer.pData)) = myMatrices;
@@ -255,7 +254,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srvList[1]);
-			myCon->DrawIndexed(1086, 0, 0); //pineapple
+			//myCon->DrawIndexed(1086, 0, 0); //pineapple
 			//-------------------*/
 		}
 #pragma endregion
@@ -302,9 +301,41 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
 			myCon->PSSetShaderResources(0, 1, &srvList[2]);
-			myCon->DrawIndexed(34974, 0, 0); //burger king
+			//myCon->DrawIndexed(34974, 0, 0); //burger king
 			//-------------------*/
 		}
+#pragma endregion
+
+#pragma region Planet
+
+		//TODO: make into as few calls as possible
+
+
+
+		//matrix math
+		temp = XMMatrixIdentity();
+
+		temp2 = XMMatrixTranslation(0, 16, 14);
+		temp = XMMatrixMultiply(temp2, temp);
+
+		temp2 = XMMatrixRotationY(rot / 10);
+		temp = XMMatrixMultiply(temp2, temp);
+
+		XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+
+
+
+		DisplayModel(
+			&modelList[0], 
+			samplerState, 
+			cBuff, 
+			myCon, 
+			&gpuBuffer, 
+			pMeshShader, 
+			vMeshShader, 
+			layoutVert, 
+			myMatrices);
+
 #pragma endregion
 		mySwap->Present(1, 0);
 	}
@@ -324,35 +355,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	//layoutList->Release();
 	//srvList->Release();
 
-	for (unsigned int i = 0; i < vBuffList.size(); ++i)
-	{
-		vBuffList[i]->Release();
-	}
-	for (unsigned int i = 0; i < iBuffList.size(); ++i)
-	{
-		iBuffList[i]->Release();
-	}
-	for (unsigned int i = 0; i < pShaderList.size(); ++i)
-	{
-		pShaderList[i]->Release();
-	}
-	for (unsigned int i = 0; i < vShaderList.size(); ++i)
-	{
-		vShaderList[i]->Release();
-	}
-	for (unsigned int i = 0; i < layoutList.size(); ++i)
-	{
-		layoutList[i]->Release();
-	}
-	for (unsigned int i = 0; i < srvList.size(); ++i)
-	{
-		srvList[i]->Release();
-	}
+	vBuffHeader->Release();
+	iBuffHeader->Release();
+	
+	pMeshShader->Release();
+	vMeshShader->Release();
+	layoutVert->Release();
+	
+	srvHeader->Release();
 
 	samplerState->Release();
 	zBuffer->Release();
 	zBufferView->Release();
+	for (unsigned int i = 0; i < modelList.size(); ++i)
+	{
+		modelList[i]
 
+	}
 
 	return (int)msg.wParam;
 }
@@ -447,11 +466,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 #pragma endregion
 
+	MODEL_DATA tempModel;
+
 	ID3D11Buffer* tempBufferData;
 	ID3D11PixelShader* tempPShaderData;
 	ID3D11VertexShader* tempVShaderData;
 	ID3D11InputLayout* tempLayoutData;
 	ID3D11ShaderResourceView* tempSRVData;
+
+	const wchar_t* texturePath = { L"assets/Dinosaur Planet/MODELS.bin.001.000.dds" };
+
 
 	// load on cardf
 	CD3D11_BUFFER_DESC bDesc;
@@ -485,7 +509,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	hr = myDev->CreateSamplerState(&samplerDesc, &samplerState);
 
-#pragma region StoneHenge_Model_Data
+#pragma region StoneHenge
 	//*----------------------------------------------------
 	//header model loading : StoneHenge
 		//buffer desc
@@ -497,19 +521,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 	subData.pSysMem = StoneHenge_data; //from header
 
-	vBuffList.push_back(tempBufferData);
-	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffList[0]);
+	
+	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffHeader);
 
 	//index buffer mesh
 	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bDesc.ByteWidth = sizeof(StoneHenge_indicies);
 	subData.pSysMem = StoneHenge_indicies;
 
-	iBuffList.push_back(tempBufferData);
-	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffList[0]);
+	
+	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffHeader);
 
-	srvList.push_back(tempSRVData);
-	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srvList[0]);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srvHeader);
 	//----------------------------------------------------*/
 #pragma endregion 
 
@@ -540,25 +563,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 		iBuffList.push_back(tempBufferData);
 		hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffList[1]);
+		
 		//----------------------------------------------------
 		//Shaders
-		pShaderList.push_back(tempPShaderData);
 
-		hr = myDev->CreatePixelShader(MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pShaderList[0]);
+		hr = myDev->CreatePixelShader(MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
 
+		hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
 
-		vShaderList.push_back(tempVShaderData);
-
-		hr = myDev->CreateVertexShader(MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vShaderList[0]);
-
-		srvList.push_back(tempSRVData);
 		hr = CreateDDSTextureFromFile(myDev, L"assets/Fruit/Pineapple/PineSS00.dds", nullptr, &srvList[1]);
 	}
 	//----------------------------------------------------*/
 
 #pragma endregion
 
-#pragma region Burgr
+#pragma region King
 
 //*----------------------------------------------------
 //complex mesh loading
@@ -592,14 +611,27 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 #pragma endregion
 
-	layoutList.push_back(tempLayoutData);
+#pragma region Planet
+	
+	LoadOBJ(
+		"assets/Dinosaur Planet/Dinosaur Planet (World Map).obj",
+		texturePath,
+		&tempModel,
+		&bDesc,
+		&subData,
+		&myDev
+	);
+	modelList.push_back(tempModel);
+#pragma endregion
+
+
 	//layout
 	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVShader, sizeof(MyMeshVShader), &layoutList[0]);
+	hr = myDev->CreateInputLayout(meshInputDesc, 3, MyMeshVShader, sizeof(MyMeshVShader), &layoutVert);
 
 	//create Z buffer & view
 	D3D11_TEXTURE2D_DESC zDesc;

@@ -23,7 +23,7 @@ bool LoadOBJ(
 	std::vector<DirectX::XMFLOAT3> out_vertices;
 	std::vector<DirectX::XMFLOAT3> out_uvs;
 	std::vector<DirectX::XMFLOAT3> out_normals;
-	char material [128] = "";
+	char material[128] = "";
 
 
 	while (true)
@@ -85,7 +85,7 @@ bool LoadOBJ(
 			normalIndices.push_back(normalIndex[2]);
 		}
 	}
-	
+
 	//process vertex data
 	for (unsigned int i = 0; i < vertexIndices.size(); i++) {
 
@@ -130,4 +130,81 @@ bool LoadOBJ(
 	*modelData = modelDataOutput;
 
 	return true;
+}
+
+
+bool LoadOBJ(
+	const char* modelPath,
+	//const char* materialPath, //for loading multitextured objects
+	const wchar_t* texturePath,
+	MODEL_DATA* modelData,
+	CD3D11_BUFFER_DESC* bDesc,
+	D3D11_SUBRESOURCE_DATA* subData,
+	ID3D11Device* myDev) 
+{
+	OBJ_DATA OBJData;
+	LoadOBJ(modelPath, &OBJData);
+
+	modelData->vertexList = OBJData.vertexList;
+	modelData->indexList = OBJData.indexList;
+
+
+	bDesc->BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bDesc->ByteWidth = modelData->vertexList.size() * sizeof(OBJ_VERTEX);
+	bDesc->CPUAccessFlags = 0;
+	bDesc->MiscFlags = 0;
+	bDesc->StructureByteStride = 0;
+	bDesc->Usage = D3D11_USAGE_IMMUTABLE;
+	subData->pSysMem = modelData->vertexList.data();
+
+	myDev->CreateBuffer(bDesc, subData, &(modelData->vBufferData));
+
+	//index buffer mesh
+	bDesc->BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bDesc->ByteWidth = modelData->indexList.size() * sizeof(unsigned int);
+	subData->pSysMem = modelData->indexList.data();
+
+	myDev->CreateBuffer(bDesc, subData, &(modelData->iBufferData));
+
+	CreateDDSTextureFromFile(myDev, texturePath, nullptr, &(modelData->srvData));
+	
+	return true;
+}
+
+
+void DisplayModel(
+	MODEL_DATA* modelData,
+	ID3D11SamplerState* samplerState,
+	ID3D11Buffer* cBuff,
+	ID3D11DeviceContext* myCon,
+	D3D11_MAPPED_SUBRESOURCE* gpuBuffer,
+	ID3D11PixelShader* pShader,
+	ID3D11VertexShader* vShader,
+	ID3D11InputLayout* layout,
+	WVP matrix
+	)
+{
+	UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
+	UINT mesh_offsets[] = { 0 };
+	ID3D11Buffer* meshVB[] = { modelData->vBufferData };
+
+	myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
+	myCon->IASetIndexBuffer(modelData->iBufferData, DXGI_FORMAT_R32_UINT, 0);
+
+	//load the vertex shader for the mesh
+	myCon->VSSetShader(vShader, 0, 0);
+	//load the pixel shader for the mesh
+	myCon->PSSetShader(pShader, 0, 0);
+	//load the layout for the mesh
+	myCon->IASetInputLayout(layout);
+
+
+
+	myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, gpuBuffer);
+	*((WVP*)(gpuBuffer->pData)) = matrix;
+	myCon->Unmap(cBuff, 0);
+
+	myCon->PSSetSamplers(0, 1, &samplerState);
+	myCon->PSSetShaderResources(0, 1, &(modelData->srvData));
+	myCon->DrawIndexed(modelData->indexList.size(), 0, 0); 
 }
