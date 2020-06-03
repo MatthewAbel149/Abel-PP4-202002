@@ -36,25 +36,20 @@ float aspectRatio = 1;
 
 
 ID3D11Buffer* cBuff; //shader variables
-//complex mesh model variables
+
+// Header model variables
 ID3D11Buffer* vBuffHeader;
 ID3D11Buffer* iBuffHeader;
-//header model variables
-//ID3D11Buffer* vBuffHeader;
-//ID3D11Buffer* iBuffHeader;
+ID3D11ShaderResourceView* srvHeader;
 
-//complex mesh model data
+// Complex mesh variables
 ID3D11PixelShader* pMeshShader;
 ID3D11VertexShader* vMeshShader;
 ID3D11InputLayout* layoutVert;
-
-
 vector< MODEL_DATA > modelList;
-
-//needed for texturing
-ID3D11ShaderResourceView* srvHeader;
 ID3D11SamplerState* samplerState;
 D3D11_SAMPLER_DESC samplerDesc;
+
 
 // Z buffer
 ID3D11Texture2D* zBuffer;
@@ -107,6 +102,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 	int scene = 0;
+	float color[] = { 0.0f, .0f, .8f, 1.f }; //color of clear buffer
 
 	// Main message loop:
 	while (true) //GetMessage(&msg, nullptr, 0, 0))
@@ -124,7 +120,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 		// rendering here
-		float color[] = { 0.0f, .0f, .8f, 1.f }; //color of clear buffer
+		
 		myCon->ClearRenderTargetView(myRtv, color); //clear buffer
 
 		myCon->ClearDepthStencilView(zBufferView, D3D11_CLEAR_DEPTH, 1, 0);
@@ -144,17 +140,80 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		rot += 0.05f; //replace with timer
 		XMMATRIX temp = XMMatrixIdentity();
 		XMMATRIX temp2 = XMMatrixIdentity();
+
 		temp = XMMatrixTranslation(-5, 10, -15);
+		
 		XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 #pragma region camera movement
 
 		//view
-		temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
-		//temp = XMMatrixLookAtLH({ 0,10,-20 }, { 0,0,3 }, { 0,1,0 });
-		XMStoreFloat4x4(&myMatrices.vMatrix, temp);
+		static float camValX = 0;
+		static float camValY = 0;
+		static float camValZ = 0;
+		static float camSpeed = 0.05f;
+		static float camSpeedDelta = 0.1f;
+		static float camRot = 0.f;
+
+		//TODO: Change to delta time
+
+		if (GetAsyncKeyState('W')) //forward
+		{
+			camValZ += camSpeed;
+		}
+		if (GetAsyncKeyState('S')) //back
+		{
+			camValZ -= camSpeed;
+		}
+		if (GetAsyncKeyState('A')) //left
+		{
+			camValX -= camSpeed;
+		}
+		if (GetAsyncKeyState('D')) //right
+		{
+			camValX += camSpeed;
+		}
+		if (GetAsyncKeyState(VK_LSHIFT)) //up
+		{
+			camValY += camSpeed;
+		}
+		if (GetAsyncKeyState(VK_LCONTROL)) //down
+		{
+			camValY -= camSpeed;
+		}
+
+		if ((GetAsyncKeyState('O') & 1) && camSpeed > camSpeedDelta) //slow down
+		{
+			camSpeed -= camSpeedDelta;
+		}
+		if ((GetAsyncKeyState('P') & 1) && camSpeed < 5.0) //speed up
+		{
+			camSpeed += camSpeedDelta;
+		}
+
+		if (GetAsyncKeyState('X'))
+			camRot -= camSpeed;
+
+		if (GetAsyncKeyState('Z'))
+			camRot += camSpeed;
+
+
+
+
+		//temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
+		temp = XMMatrixLookAtLH(
+			{ camValX + 0, camValY + 10.f, camValZ - 20.f }, 
+			{ camValX + 0, camValY + 0, camValZ + 6 }, 
+			{ 0, 1, 0 });
+
+
+
+
+		temp2 = XMMatrixRotationY(camRot);
 
 		temp = XMMatrixMultiply(temp2, temp);
+
+		XMStoreFloat4x4(&myMatrices.vMatrix, temp);
 
 #pragma endregion
 
@@ -173,13 +232,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		ID3D11Buffer* constants[] = { cBuff };
 		myCon->VSSetConstantBuffers(0, 1, constants);
 		
-		if (GetAsyncKeyState(VK_LBUTTON) & 1) scene += 1;
+		if (GetAsyncKeyState('N') & 1) scene += 1;
 		if (scene == 3) scene -= 3;
 
 
 	if (scene == 0) {
 #pragma region StonehengeDrawCall
-			//*Draw
 			{
 				//------------------- Load stonehenge
 				UINT header_strides[] = { sizeof(_OBJ_VERT_) };
@@ -209,12 +267,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myCon->PSSetShaderResources(0, 1, &srvHeader);
 				myCon->DrawIndexed(2532, 0, 0); //stonehenge
 			}
-			//*/
 #pragma endregion
 
 #pragma region King
 			{
-				//matrix math
+				//-----------------------------------------
+				//   matrix math
+				//-----------------------------------------
 				static float burgerRot = 0;
 
 				if (GetAsyncKeyState('K'))
@@ -222,7 +281,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 				temp = XMMatrixIdentity();
 
-				temp2 = XMMatrixTranslation(0, 3, 8);
+				temp2 = XMMatrixTranslation(0, 3, 0);
 				temp = XMMatrixMultiply(temp2, temp);
 				
 				if (GetAsyncKeyState('B'))
@@ -235,7 +294,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				temp = XMMatrixMultiply(temp2, temp);
 
 				XMStoreFloat4x4(&myMatrices.wMatrix, temp);
-
+				//-----------------------------------------
 				DisplayModel(
 					&modelList[1],
 					samplerState,
@@ -248,6 +307,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
+
 	}
 
 
@@ -291,7 +351,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//matrix math
 			temp = XMMatrixIdentity();
 
-			temp2 = XMMatrixTranslation(0, 16, 14);
+			temp2 = XMMatrixTranslation(0, 0, 6);
 			temp = XMMatrixMultiply(temp2, temp);
 
 			temp2 = XMMatrixRotationY(rot / 10);
