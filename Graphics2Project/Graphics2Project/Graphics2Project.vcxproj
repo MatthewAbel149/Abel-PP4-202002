@@ -164,11 +164,13 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="WICTextureLoader.h" />
+    <ClInclude Include="XTime.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="Graphics2Project.cpp" />
     <ClCompile Include="OBJLoader.cpp" />
+    <ClCompile Include="XTime.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Graphics2Project.rc" />

@@ -57,7 +57,20 @@ ID3D11DepthStencilView* zBufferView;
 
 HRESULT hr;
 
+XMMATRIX camera =
+/*/
+	XMMatrixLookAtLH(
+	{ 0, 10.f, -20.f },
+	{ 0, 0,	6 },
+	{ 0, 1,	0 });
+	//*/
+{ 
+	1,0,0,1,
+	0,1,0,1,
+	0,0,1,1,
+	1,1,1,1 };
 
+XTime timer;
 
 
 #define MAX_LOADSTRING 100
@@ -78,7 +91,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_ LPWSTR    lpCmdLine,
 	_In_ int       nCmdShow)
 {
-#pragma region stuffIDontUnderstand
+#pragma region Stuff I dont understand
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -120,7 +133,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 		// rendering here
-		
+
 		myCon->ClearRenderTargetView(myRtv, color); //clear buffer
 
 		myCon->ClearDepthStencilView(zBufferView, D3D11_CLEAR_DEPTH, 1, 0);
@@ -137,13 +150,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		//world
 		static float rot = 0;
-		rot += 0.05f; //replace with timer
+		//rot += 0.05f; //replace with timer
+		rot += timer.Delta();
 		XMMATRIX temp = XMMatrixIdentity();
 		XMMATRIX temp2 = XMMatrixIdentity();
 
-		temp = XMMatrixTranslation(-5, 10, -15);
-		
-		XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+		//temp = XMMatrixTranslation(-5, 10, -15);
+
+		//XMStoreFloat4x4(&myMatrices.wMatrix, temp);
 
 #pragma region camera movement
 
@@ -156,6 +170,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		static float camRot = 0.f;
 
 		//TODO: Change to delta time
+		
+
 
 		if (GetAsyncKeyState('W')) //forward
 		{
@@ -191,27 +207,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			camSpeed += camSpeedDelta;
 		}
 
-		if (GetAsyncKeyState('X'))
+		if (GetAsyncKeyState('X')) //turn right
 			camRot -= camSpeed;
 
-		if (GetAsyncKeyState('Z'))
+		if (GetAsyncKeyState('Z')) //turn left
 			camRot += camSpeed;
 
 
-
-
 		//temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
+
+		/*/
 		temp = XMMatrixLookAtLH(
-			{ camValX + 0, camValY + 10.f, camValZ - 20.f }, 
-			{ camValX + 0, camValY + 0, camValZ + 6 }, 
+			{ camValX + 0, camValY + 10.f, camValZ - 20.f },
+			{ camValX + 0, camValY + 0, camValZ + 6 },
 			{ 0, 1, 0 });
+		//*/
 
-
-
+		temp = camera;
 
 		temp2 = XMMatrixRotationY(camRot);
 
-		temp = XMMatrixMultiply(temp2, temp);
+		temp = XMMatrixMultiply(temp, temp2);
 
 		XMStoreFloat4x4(&myMatrices.vMatrix, temp);
 
@@ -231,13 +247,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		ID3D11Buffer* constants[] = { cBuff };
 		myCon->VSSetConstantBuffers(0, 1, constants);
-		
+
 		if (GetAsyncKeyState('N') & 1) scene += 1;
 		if (scene == 3) scene -= 3;
 
 
-	if (scene == 0) {
-#pragma region StonehengeDrawCall
+		if (scene == 0) {
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+#pragma region Stonehenge
 			{
 				//------------------- Load stonehenge
 				UINT header_strides[] = { sizeof(_OBJ_VERT_) };
@@ -246,7 +263,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 				myCon->IASetVertexBuffers(0, 1, headerVB, header_strides, header_offsets);
 				myCon->IASetIndexBuffer(iBuffHeader, DXGI_FORMAT_R32_UINT, 0);
-				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
 				//load the vertex shader for the mesh
@@ -268,7 +284,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myCon->DrawIndexed(2532, 0, 0); //stonehenge
 			}
 #pragma endregion
-
 #pragma region King
 			{
 				//-----------------------------------------
@@ -283,7 +298,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 				temp2 = XMMatrixTranslation(0, 3, 0);
 				temp = XMMatrixMultiply(temp2, temp);
-				
+
 				if (GetAsyncKeyState('B'))
 				{
 					temp2 = XMMatrixScaling(2.f, 2.f, 2.f);
@@ -307,11 +322,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
+		}
 
-	}
 
-
-	if (scene == 1) {
+		if (scene == 1) {
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 #pragma region Pineapple
 			{
 				//*------------------- Load complex mesh
@@ -342,10 +357,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
-	}
+		}
 
 
-	if (scene == 2) {
+		if (scene == 2) {
 #pragma region Planet
 
 			//matrix math
@@ -372,9 +387,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myMatrices);
 
 #pragma endregion
-	}
+		}
 
 		mySwap->Present(1, 0);
+
+		timer.Signal();
 	}
 
 	//Release all D3D11 interfaces
@@ -394,19 +411,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	vBuffHeader->Release();
 	iBuffHeader->Release();
-	
+
 	pMeshShader->Release();
 	vMeshShader->Release();
 	layoutVert->Release();
-	
+
 	srvHeader->Release();
 
 	samplerState->Release();
 	zBuffer->Release();
 	zBufferView->Release();
 
-	for (unsigned int i = 0; i < modelList.size(); ++i) 
-	{ 
+	for (unsigned int i = 0; i < modelList.size(); ++i)
+	{
 		modelList[i].iBufferData->Release();
 		modelList[i].vBufferData->Release();
 		modelList[i].srvData->Release();
@@ -558,7 +575,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	bDesc.Usage = D3D11_USAGE_IMMUTABLE;
 	subData.pSysMem = StoneHenge_data; //from header
 
-	
+
 	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffHeader);
 
 	//index buffer mesh
@@ -566,7 +583,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	bDesc.ByteWidth = sizeof(StoneHenge_indicies);
 	subData.pSysMem = StoneHenge_indicies;
 
-	
+
 	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffHeader);
 
 	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srvHeader);
@@ -584,7 +601,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		myDev
 	);
 	modelList.push_back(tempModel);
-	
+
 #pragma endregion
 
 #pragma region King
@@ -602,7 +619,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #pragma endregion
 
 #pragma region Planet
-	
+
 	LoadOBJ(
 		"assets/Dinosaur Planet/Dinosaur Planet (World Map).obj",
 		L"assets/Dinosaur Planet/MODELS.bin.001.000.dds",
@@ -613,6 +630,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	);
 	modelList.push_back(tempModel);
 
+#pragma endregion
+
+#pragma region Procedural Model
+	//*/
+	for (unsigned int i = 0; i < 2; ++i)
+	{
+		for (unsigned int j = 0; j < 2; j++)
+		{
+			for (unsigned int k = 0; k < 2; k++)
+			{
+
+			}
+		}
+	}
+	//*/
 #pragma endregion
 
 

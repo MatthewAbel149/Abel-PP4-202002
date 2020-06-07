@@ -10,6 +10,10 @@
 using namespace DirectX;
 using namespace std;
 #include <iostream>
+#include <DirectXMathMatrix.inl>
+#include "XTime.h"
+//#include <ctime>
+
 
 //#include "glm/glm.hpp"
 
