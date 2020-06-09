@@ -62,13 +62,10 @@ XMMATRIX camera =
 	XMMatrixLookAtLH(
 	{ 0, 10.f, -20.f },
 	{ 0, 0,	6 },
-	{ 0, 1,	0 });
-	//*/
-{ 
-	1,0,0,1,
-	0,1,0,1,
-	0,0,1,1,
-	1,1,1,1 };
+	{ 0, 1,	0 } );
+//*/
+	XMMatrixIdentity();
+//*/
 
 XTime timer;
 
@@ -145,6 +142,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// Rasterizer
 		myCon->RSSetViewports(1, &myPort);
 
+		
 
 #pragma region camera setup
 
@@ -155,48 +153,77 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		XMMATRIX temp = XMMatrixIdentity();
 		XMMATRIX temp2 = XMMatrixIdentity();
 
-		//temp = XMMatrixTranslation(-5, 10, -15);
-
-		//XMStoreFloat4x4(&myMatrices.wMatrix, temp);
-
 #pragma region camera movement
 
 		//view
-		static float camValX = 0;
-		static float camValY = 0;
-		static float camValZ = 0;
-		static float camSpeed = 0.05f;
-		static float camSpeedDelta = 0.1f;
-		static float camRot = 0.f;
+		static float camSpeed = 1.1f;
+		static float camSpeedDelta = 0.2f;
 
 		//TODO: Change to delta time
 		
+		////////////////////////////////////////////////////////////////////////////
 
+		if (GetAsyncKeyState('X')) //turn right
+		{
+			temp2 = XMMatrixRotationY(-timer.Delta() * camSpeed);
+			temp = XMMatrixMultiply(temp, temp2);
+		}
+
+		if (GetAsyncKeyState('Z')) //turn left
+		{
+			temp2 = XMMatrixRotationY(+timer.Delta() * camSpeed);
+			temp = XMMatrixMultiply(temp, temp2);
+		}
+
+
+		if (GetAsyncKeyState('C')) // pitch up
+		{
+			temp2 = XMMatrixRotationX(-timer.Delta() * camSpeed);
+			temp = XMMatrixMultiply(temp, temp2);
+		}
+
+		if (GetAsyncKeyState('V')) //turn left
+		{
+			//camRot += camSpeed;
+			temp2 = XMMatrixRotationX(+timer.Delta() * camSpeed);
+			temp = XMMatrixMultiply(temp, temp2);
+		}
+
+		////////////////////////////////////////////////////////////////////////////
 
 		if (GetAsyncKeyState('W')) //forward
 		{
-			camValZ += camSpeed;
+			temp2 = XMMatrixTranslation(0, 0, timer.Delta() * camSpeed);
+			temp = XMMatrixMultiply(temp, temp2);
 		}
 		if (GetAsyncKeyState('S')) //back
 		{
-			camValZ -= camSpeed;
+			temp2 = XMMatrixTranslation(0, 0, -timer.Delta() * camSpeed);
+			temp = XMMatrixMultiply(temp, temp2);
 		}
 		if (GetAsyncKeyState('A')) //left
 		{
-			camValX -= camSpeed;
+			temp2 = XMMatrixTranslation(-timer.Delta() * camSpeed, 0, 0);
+			temp = XMMatrixMultiply(temp, temp2);
 		}
 		if (GetAsyncKeyState('D')) //right
 		{
-			camValX += camSpeed;
+			temp2 = XMMatrixTranslation(timer.Delta() * camSpeed, 0, 0);
+			temp = XMMatrixMultiply(temp, temp2);
 		}
+		
 		if (GetAsyncKeyState(VK_LSHIFT)) //up
 		{
-			camValY += camSpeed;
+			temp2 = XMMatrixTranslation(0, timer.Delta() * camSpeed, 0);
+			temp = XMMatrixMultiply(temp, temp2);
 		}
 		if (GetAsyncKeyState(VK_LCONTROL)) //down
 		{
-			camValY -= camSpeed;
+			temp2 = XMMatrixTranslation(0, -timer.Delta() * camSpeed, 0);
+			temp = XMMatrixMultiply(temp, temp2);
 		}
+		
+		////////////////////////////////////////////////////////////////////////////
 
 		if ((GetAsyncKeyState('O') & 1) && camSpeed > camSpeedDelta) //slow down
 		{
@@ -207,12 +234,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			camSpeed += camSpeedDelta;
 		}
 
-		if (GetAsyncKeyState('X')) //turn right
-			camRot -= camSpeed;
-
-		if (GetAsyncKeyState('Z')) //turn left
-			camRot += camSpeed;
-
 
 		//temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
 
@@ -222,14 +243,16 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			{ camValX + 0, camValY + 0, camValZ + 6 },
 			{ 0, 1, 0 });
 		//*/
+		temp = XMMatrixInverse(temp.r, temp);
+		//camera = XMMatrixInverse(camera.r, camera);
+		
+		//camera = XMMatrixMultiply(temp, camera);
+		camera = XMMatrixMultiply(camera, temp);
 
-		temp = camera;
+		//temp = XMMatrixMultiply(temp, temp2);
 
-		temp2 = XMMatrixRotationY(camRot);
-
-		temp = XMMatrixMultiply(temp, temp2);
-
-		XMStoreFloat4x4(&myMatrices.vMatrix, temp);
+		//XMStoreFloat4x4(&myMatrices.vMatrix, temp);
+		XMStoreFloat4x4(&myMatrices.vMatrix, camera);
 
 #pragma endregion
 
@@ -253,8 +276,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		if (scene == 0) {
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-#pragma region Stonehenge
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+			#pragma region Stonehenge
 			{
 				//------------------- Load stonehenge
 				UINT header_strides[] = { sizeof(_OBJ_VERT_) };
@@ -284,7 +307,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myCon->DrawIndexed(2532, 0, 0); //stonehenge
 			}
 #pragma endregion
-#pragma region King
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			#pragma region King
 			{
 				//-----------------------------------------
 				//   matrix math
@@ -322,12 +346,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
+
 		}
 
 
 		if (scene == 1) {
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-#pragma region Pineapple
+			#pragma region Pineapple
 			{
 				//*------------------- Load complex mesh
 				//matrix math
@@ -358,10 +383,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			}
 #pragma endregion
 		}
-
+		
 
 		if (scene == 2) {
-#pragma region Planet
+			#pragma region Planet
 
 			//matrix math
 			temp = XMMatrixIdentity();

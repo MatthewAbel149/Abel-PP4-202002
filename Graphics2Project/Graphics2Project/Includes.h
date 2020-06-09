@@ -12,6 +12,7 @@ using namespace std;
 #include <iostream>
 #include <DirectXMathMatrix.inl>
 #include "XTime.h"
+#include <zmouse.h>
 //#include <ctime>
 
 

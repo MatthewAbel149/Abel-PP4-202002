@@ -11,6 +11,12 @@ Camera:
 
 	O	: Decrease camera speed
 	P	: Increase camera speed
+
+	Z	: Turn left
+	X	: Turn right
+	C	: Pitch up
+	V	: Pitch down
+
 Scene:
 	N	: Next scene
 Misc:
