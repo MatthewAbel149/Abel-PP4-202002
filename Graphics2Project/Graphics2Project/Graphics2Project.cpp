@@ -150,8 +150,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		static float rot = 0;
 		//rot += 0.05f; //replace with timer
 		rot += timer.Delta();
+
 		XMMATRIX temp = XMMatrixIdentity();
 		XMMATRIX temp2 = XMMatrixIdentity();
+
+		XMMATRIX yRotMatrix = XMMatrixIdentity();
 
 #pragma region camera movement
 
@@ -163,16 +166,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		
 		////////////////////////////////////////////////////////////////////////////
 
+
 		if (GetAsyncKeyState('X')) //turn right
 		{
-			temp2 = XMMatrixRotationY(-timer.Delta() * camSpeed);
-			temp = XMMatrixMultiply(temp, temp2);
+			yRotMatrix = XMMatrixRotationY(-timer.Delta() * camSpeed);
 		}
 
 		if (GetAsyncKeyState('Z')) //turn left
 		{
-			temp2 = XMMatrixRotationY(+timer.Delta() * camSpeed);
-			temp = XMMatrixMultiply(temp, temp2);
+			yRotMatrix = XMMatrixRotationY(timer.Delta() * camSpeed);
 		}
 
 
@@ -235,24 +237,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 
-		//temp = XMMatrixLookAtLH({ 2,10,-20 }, { 0,0,3 }, { 0,1,0 });
+		camera = XMMatrixMultiply(temp, camera);
+		XMVECTOR cameraVector = camera.r[3];
 
-		/*/
-		temp = XMMatrixLookAtLH(
-			{ camValX + 0, camValY + 10.f, camValZ - 20.f },
-			{ camValX + 0, camValY + 0, camValZ + 6 },
-			{ 0, 1, 0 });
-		//*/
-		temp = XMMatrixInverse(temp.r, temp);
-		//camera = XMMatrixInverse(camera.r, camera);
+
+		camera = XMMatrixMultiply(camera, yRotMatrix);
+		camera.r[3] = cameraVector;
+
 		
-		//camera = XMMatrixMultiply(temp, camera);
-		camera = XMMatrixMultiply(camera, temp);
-
-		//temp = XMMatrixMultiply(temp, temp2);
-
-		//XMStoreFloat4x4(&myMatrices.vMatrix, temp);
-		XMStoreFloat4x4(&myMatrices.vMatrix, camera);
+		XMStoreFloat4x4(&myMatrices.vMatrix, XMMatrixInverse(0, camera));
 
 #pragma endregion
 
