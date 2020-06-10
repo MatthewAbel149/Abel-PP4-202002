@@ -37,11 +37,6 @@ float aspectRatio = 1;
 
 ID3D11Buffer* cBuff; //shader variables
 
-// Header model variables
-ID3D11Buffer* vBuffHeader;
-ID3D11Buffer* iBuffHeader;
-ID3D11ShaderResourceView* srvHeader;
-
 // Complex mesh variables
 ID3D11PixelShader* pMeshShader;
 ID3D11VertexShader* vMeshShader;
@@ -57,15 +52,10 @@ ID3D11DepthStencilView* zBufferView;
 
 HRESULT hr;
 
-XMMATRIX camera =
-/*/
-	XMMatrixLookAtLH(
-	{ 0, 10.f, -20.f },
-	{ 0, 0,	6 },
-	{ 0, 1,	0 } );
-//*/
-	XMMatrixIdentity();
-//*/
+SHORT xPosMouse = 0;
+SHORT yPosMouse = 0;
+
+XMMATRIX camera = XMMatrixMultiply(XMMatrixTranslation(0, 6, -15), XMMatrixIdentity());
 
 XTime timer;
 
@@ -112,7 +102,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 	int scene = 0;
-	float color[] = { 0.0f, .0f, .8f, 1.f }; //color of clear buffer
+	float color[] = { .0f, .0f, .8f, 1.f }; //color of clear buffer
 
 	// Main message loop:
 	while (true) //GetMessage(&msg, nullptr, 0, 0))
@@ -129,12 +119,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			break;
 #pragma endregion
 
-		// rendering here
 
 		myCon->ClearRenderTargetView(myRtv, color); //clear buffer
 
 		myCon->ClearDepthStencilView(zBufferView, D3D11_CLEAR_DEPTH, 1, 0);
-		// Setup the pipeline
+		// Set up the pipeline
 
 		// Output Merger
 		ID3D11RenderTargetView* tempRTV[] = { myRtv }; //to remove, pass nullptr instead of myRtv
@@ -142,89 +131,78 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// Rasterizer
 		myCon->RSSetViewports(1, &myPort);
 
-		
 
-#pragma region camera setup
+
+#pragma region camera
 
 		//world
 		static float rot = 0;
 		//rot += 0.05f; //replace with timer
 		rot += timer.Delta();
 
-		XMMATRIX temp = XMMatrixIdentity();
-		XMMATRIX temp2 = XMMatrixIdentity();
-
-		XMMATRIX yRotMatrix = XMMatrixIdentity();
+		XMMATRIX temporaryMatrix = XMMatrixIdentity();
 
 #pragma region camera movement
 
 		//view
-		static float camSpeed = 1.1f;
+		XMMATRIX yRotMatrix = XMMatrixIdentity();
+		static float camSpeed = 5.1f;
 		static float camSpeedDelta = 0.2f;
 
-		//TODO: Change to delta time
-		
 		////////////////////////////////////////////////////////////////////////////
+
+		// TODO: Change to mouse delta
 
 
 		if (GetAsyncKeyState('X')) //turn right
 		{
-			yRotMatrix = XMMatrixRotationY(-timer.Delta() * camSpeed);
+			yRotMatrix = XMMatrixRotationY(timer.Delta() * camSpeed);
 		}
 
 		if (GetAsyncKeyState('Z')) //turn left
 		{
-			yRotMatrix = XMMatrixRotationY(timer.Delta() * camSpeed);
+			yRotMatrix = XMMatrixRotationY(-timer.Delta() * camSpeed);
 		}
 
 
 		if (GetAsyncKeyState('C')) // pitch up
 		{
-			temp2 = XMMatrixRotationX(-timer.Delta() * camSpeed);
-			temp = XMMatrixMultiply(temp, temp2);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(-timer.Delta() * camSpeed));
 		}
 
 		if (GetAsyncKeyState('V')) //turn left
 		{
-			//camRot += camSpeed;
-			temp2 = XMMatrixRotationX(+timer.Delta() * camSpeed);
-			temp = XMMatrixMultiply(temp, temp2);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(+timer.Delta() * camSpeed));
 		}
 
 		////////////////////////////////////////////////////////////////////////////
 
 		if (GetAsyncKeyState('W')) //forward
 		{
-			temp2 = XMMatrixTranslation(0, 0, timer.Delta() * camSpeed);
-			temp = XMMatrixMultiply(temp, temp2);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(0, 0, timer.Delta() * camSpeed));
 		}
 		if (GetAsyncKeyState('S')) //back
 		{
-			temp2 = XMMatrixTranslation(0, 0, -timer.Delta() * camSpeed);
-			temp = XMMatrixMultiply(temp, temp2);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(0, 0, -timer.Delta() * camSpeed));
 		}
 		if (GetAsyncKeyState('A')) //left
 		{
-			temp2 = XMMatrixTranslation(-timer.Delta() * camSpeed, 0, 0);
-			temp = XMMatrixMultiply(temp, temp2);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(-timer.Delta() * camSpeed, 0, 0));
 		}
 		if (GetAsyncKeyState('D')) //right
 		{
-			temp2 = XMMatrixTranslation(timer.Delta() * camSpeed, 0, 0);
-			temp = XMMatrixMultiply(temp, temp2);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(timer.Delta() * camSpeed, 0, 0));
 		}
-		
+
 		if (GetAsyncKeyState(VK_LSHIFT)) //up
 		{
-			temp2 = XMMatrixTranslation(0, timer.Delta() * camSpeed, 0);
-			temp = XMMatrixMultiply(temp, temp2);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(0, timer.Delta() * camSpeed, 0));
 		}
 		if (GetAsyncKeyState(VK_LCONTROL)) //down
 		{
-			temp2 = XMMatrixTranslation(0, -timer.Delta() * camSpeed, 0);
-			temp = XMMatrixMultiply(temp, temp2);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(0, -timer.Delta() * camSpeed, 0));
 		}
-		
+
 		////////////////////////////////////////////////////////////////////////////
 
 		if ((GetAsyncKeyState('O') & 1) && camSpeed > camSpeedDelta) //slow down
@@ -237,31 +215,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 
-		camera = XMMatrixMultiply(temp, camera);
+		camera = XMMatrixMultiply(temporaryMatrix, camera);
 		XMVECTOR cameraVector = camera.r[3];
 
 
 		camera = XMMatrixMultiply(camera, yRotMatrix);
 		camera.r[3] = cameraVector;
 
-		
+
 		XMStoreFloat4x4(&myMatrices.vMatrix, XMMatrixInverse(0, camera));
 
 #pragma endregion
 
 		//projection
-		temp = XMMatrixPerspectiveFovLH(3.14f / 2.0f, aspectRatio, 0.1f, 1000);
-		XMStoreFloat4x4(&myMatrices.pMatrix, temp);
+		temporaryMatrix = XMMatrixPerspectiveFovLH(3.14f / 2.0f, aspectRatio, 0.1f, 1000);
+		XMStoreFloat4x4(&myMatrices.pMatrix, temporaryMatrix);
 
 #pragma endregion
 
 		D3D11_MAPPED_SUBRESOURCE gpuBuffer;
-		myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-		*((WVP*)(gpuBuffer.pData)) = myMatrices;
-		//memcpy(gpuBuffer.pData, &myMatrices, sizeof(WVP));
-		myCon->Unmap(cBuff, 0);
-
 		ID3D11Buffer* constants[] = { cBuff };
+
 		myCon->VSSetConstantBuffers(0, 1, constants);
 
 		if (GetAsyncKeyState('N') & 1) scene += 1;
@@ -269,39 +243,25 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		if (scene == 0) {
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-			#pragma region Stonehenge
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+#pragma region Stonehenge
 			{
-				//------------------- Load stonehenge
-				UINT header_strides[] = { sizeof(_OBJ_VERT_) };
-				UINT header_offsets[] = { 0 };
-				ID3D11Buffer* headerVB[] = { vBuffHeader };
 
-				myCon->IASetVertexBuffers(0, 1, headerVB, header_strides, header_offsets);
-				myCon->IASetIndexBuffer(iBuffHeader, DXGI_FORMAT_R32_UINT, 0);
+				XMStoreFloat4x4(&myMatrices.wMatrix, XMMatrixTranslation(0, 0, 0));
 
-
-				//load the vertex shader for the mesh
-				myCon->VSSetShader(vMeshShader, 0, 0);
-				//load the pixel shader for the mesh
-				myCon->PSSetShader(pMeshShader, 0, 0);
-				//load the layout for the mesh
-				myCon->IASetInputLayout(layoutVert);
-
-				temp = XMMatrixIdentity();
-				XMStoreFloat4x4(&myMatrices.wMatrix, temp);
-
-				myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-				*((WVP*)(gpuBuffer.pData)) = myMatrices;
-				myCon->Unmap(cBuff, 0);
-
-				myCon->PSSetSamplers(0, 1, &samplerState);
-				myCon->PSSetShaderResources(0, 1, &srvHeader);
-				myCon->DrawIndexed(2532, 0, 0); //stonehenge
+				DisplayModel(
+					&modelList[0],
+					samplerState,
+					cBuff,
+					myCon,
+					&gpuBuffer,
+					pMeshShader,
+					vMeshShader,
+					layoutVert,
+					myMatrices);
 			}
 #pragma endregion
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			#pragma region King
+#pragma region King
 			{
 				//-----------------------------------------
 				//   matrix math
@@ -309,26 +269,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				static float burgerRot = 0;
 
 				if (GetAsyncKeyState('K'))
+				{
 					burgerRot += .1f;
+				}
 
-				temp = XMMatrixIdentity();
+				temporaryMatrix = XMMatrixIdentity();
 
-				temp2 = XMMatrixTranslation(0, 3, 0);
-				temp = XMMatrixMultiply(temp2, temp);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 3, 0), temporaryMatrix);
 
 				if (GetAsyncKeyState('B'))
 				{
-					temp2 = XMMatrixScaling(2.f, 2.f, 2.f);
-					temp = XMMatrixMultiply(temp2, temp);
+					myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+					temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(2.f, 2.f, 2.f), temporaryMatrix);
 				}
 
-				temp2 = XMMatrixRotationY(burgerRot);
-				temp = XMMatrixMultiply(temp2, temp);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(burgerRot), temporaryMatrix);
 
-				XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 				//-----------------------------------------
 				DisplayModel(
-					&modelList[1],
+					&modelList[2],
 					samplerState,
 					cBuff,
 					myCon,
@@ -345,26 +305,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (scene == 1) {
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			#pragma region Pineapple
+#pragma region Pineapple
 			{
 				//*------------------- Load complex mesh
 				//matrix math
-				temp = XMMatrixIdentity();
+				temporaryMatrix = XMMatrixIdentity();
 
-				temp2 = XMMatrixTranslation(-5, 10, 0);
-				temp = XMMatrixMultiply(temp2, temp);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(-5, 10, 0), temporaryMatrix);
 
-				temp2 = XMMatrixScaling(.1f, .1f, .1f);
-				temp = XMMatrixMultiply(temp2, temp);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.1f, .1f, .1f), temporaryMatrix);
 
-				temp2 = XMMatrixRotationY(rot);
-				temp = XMMatrixMultiply(temp2, temp);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(rot), temporaryMatrix);
 
-				XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
 
 				DisplayModel(
-					&modelList[0],
+					&modelList[1],
 					samplerState,
 					cBuff,
 					myCon,
@@ -375,26 +332,55 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
+
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+#pragma region Grid
+			{
+				//*------------------- Load complex mesh
+				//matrix math
+				temporaryMatrix = XMMatrixIdentity();
+
+				//temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(-5, 10, 0), temporaryMatrix);
+
+				//temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.1f, .1f, .1f), temporaryMatrix);
+
+				//temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(rot), temporaryMatrix);
+
+				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+
+				DisplayModel(
+					&modelList[4],
+					samplerState,
+					cBuff,
+					myCon,
+					&gpuBuffer,
+					pMeshShader,
+					vMeshShader,
+					layoutVert,
+					myMatrices);
+			}
+#pragma endregion
+
 		}
-		
+
 
 		if (scene == 2) {
-			#pragma region Planet
+#pragma region Planet
 
 			//matrix math
-			temp = XMMatrixIdentity();
+			temporaryMatrix = XMMatrixIdentity();
 
-			temp2 = XMMatrixTranslation(0, 0, 6);
-			temp = XMMatrixMultiply(temp2, temp);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 0, 6), temporaryMatrix);
 
-			temp2 = XMMatrixRotationY(rot / 10);
-			temp = XMMatrixMultiply(temp2, temp);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(rot / 10), temporaryMatrix);
 
-			XMStoreFloat4x4(&myMatrices.wMatrix, temp);
+			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
 
 			DisplayModel(
-				&modelList[2],
+				&modelList[3],
 				samplerState,
 				cBuff,
 				myCon,
@@ -419,22 +405,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	mySwap->Release();
 	myDev->Release();
 	myRtv->Release();
-	///
-	//vBuffList->Release();
-	//iBuffList->Release();
-	//pShaderList->Release();
-	//vShaderList->Release();
-	//layoutList->Release();
-	//srvList->Release();
-
-	vBuffHeader->Release();
-	iBuffHeader->Release();
 
 	pMeshShader->Release();
 	vMeshShader->Release();
 	layoutVert->Release();
-
-	srvHeader->Release();
 
 	samplerState->Release();
 	zBuffer->Release();
@@ -542,12 +516,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	MODEL_DATA tempModel;
 
-	const wchar_t* texturePath = { L"assets/Dinosaur Planet/MODELS.bin.001.000.dds" };
-	texturePath = { L"assets/Fruit/Pineapple/PineSS00.dds" };
-	//texturePath = { L"assets/Dinosaur Planet/MODELS.bin.001.000.dds" };
-
-
-
 
 	// load on cardf
 	CD3D11_BUFFER_DESC bDesc;
@@ -582,30 +550,49 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreateSamplerState(&samplerDesc, &samplerState);
 
 #pragma region StoneHenge
-	//*----------------------------------------------------
+	//----------------------------------------------------
 	//header model loading : StoneHenge
-		//buffer desc
-	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bDesc.ByteWidth = sizeof(StoneHenge_data);
-	bDesc.CPUAccessFlags = 0;
-	bDesc.MiscFlags = 0;
-	bDesc.StructureByteStride = 0;
-	bDesc.Usage = D3D11_USAGE_IMMUTABLE;
-	subData.pSysMem = StoneHenge_data; //from header
+	//----------------------------------------------------
+	OBJ_DATA ObjData;
+	OBJ_VERTEX tempVertData;
+
+	for (unsigned int i = 0; i < 1457; ++i)
+	{
+		tempVertData.pos.x = StoneHenge_data[i].pos[0];
+		tempVertData.pos.y = StoneHenge_data[i].pos[1];
+		tempVertData.pos.z = StoneHenge_data[i].pos[2];
+
+		tempVertData.tex.x = StoneHenge_data[i].uvw[0];
+		tempVertData.tex.y = StoneHenge_data[i].uvw[1];
+		tempVertData.tex.z = StoneHenge_data[i].uvw[2];
+
+		tempVertData.nrm.x = StoneHenge_data[i].nrm[0];
+		tempVertData.nrm.y = StoneHenge_data[i].nrm[1];
+		tempVertData.nrm.z = StoneHenge_data[i].nrm[2];
+
+		ObjData.vertexList.push_back(tempVertData);
+	}
+	for (unsigned int i = 0; i < 2532; ++i)
+	{
+		ObjData.indexList.push_back(StoneHenge_indicies[i]);
+	}
 
 
-	hr = myDev->CreateBuffer(&bDesc, &subData, &vBuffHeader);
+	LoadModelFromOBJ(
+		L"assets/Stonehenge/StoneHenge.dds",
+		ObjData,
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
 
-	//index buffer mesh
-	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bDesc.ByteWidth = sizeof(StoneHenge_indicies);
-	subData.pSysMem = StoneHenge_indicies;
+	modelList.push_back(tempModel);
+
+	ObjData.indexList.clear();
+	ObjData.vertexList.clear();
 
 
-	hr = myDev->CreateBuffer(&bDesc, &subData, &iBuffHeader);
-
-	hr = CreateDDSTextureFromFile(myDev, L"assets/Stonehenge/StoneHenge.dds", nullptr, &srvHeader);
-	//----------------------------------------------------*/
 #pragma endregion 
 
 #pragma region Pineapple
@@ -651,18 +638,67 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #pragma endregion
 
 #pragma region Procedural Model
-	//*/
-	for (unsigned int i = 0; i < 2; ++i)
-	{
-		for (unsigned int j = 0; j < 2; j++)
-		{
-			for (unsigned int k = 0; k < 2; k++)
-			{
 
+
+
+	//----------------------------------------------------
+	// Procedural Mesh : Grid
+	//----------------------------------------------------
+
+	//bool MakeGrid(unsigned int halfSize, float spaceBetweenLines, OBJ_DATA* outputData)
+	{
+
+		int halfSize = 50;
+		float spaceBetweenLines = 0.25f;
+		//if (spaceBetweenLines <= 0)
+			//return false;
+
+
+		for (float i = -halfSize; i < halfSize; i += spaceBetweenLines)
+		{
+			for (float j = -halfSize; j < halfSize; j += spaceBetweenLines)
+			{
+				tempVertData.pos = { i, 0, j };
+				tempVertData.tex = { 0, 0, 0 };
+				tempVertData.nrm = { 0, 1, 0 };
+
+				ObjData.vertexList.push_back(tempVertData);
+			}
+		}
+		int multiplier = 1/( spaceBetweenLines * spaceBetweenLines);
+		int halfMultiplier = 1 / spaceBetweenLines;
+		int totalVerts = (halfSize * halfSize * 4 * multiplier);
+		int hIndices = totalVerts - (halfSize * 2 * halfMultiplier);
+
+		for (unsigned int i = 1; i < totalVerts; ++i)
+		{
+			if ((i % (halfSize * 2 * halfMultiplier)))
+			{
+				ObjData.indexList.push_back(i - 1);
+				ObjData.indexList.push_back(i);
+			}
+
+			if ((i <= hIndices))
+			{
+				ObjData.indexList.push_back(i - 1);
+				ObjData.indexList.push_back(i + (halfSize * 2 * (halfMultiplier) - 1));
 			}
 		}
 	}
-	//*/
+
+	LoadModelFromOBJ(
+		L"assets\Fruit\Coconut\cocoSS00.dds",
+		ObjData,
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+
+	modelList.push_back(tempModel);
+	ObjData.indexList.clear();
+	ObjData.vertexList.clear();
+
 #pragma endregion
 
 

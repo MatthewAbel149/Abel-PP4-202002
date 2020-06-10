@@ -13,10 +13,6 @@ using namespace std;
 #include <DirectXMathMatrix.inl>
 #include "XTime.h"
 #include <zmouse.h>
-//#include <ctime>
-
-
-//#include "glm/glm.hpp"
 
 //header model shaders
 #include "HeaderPShader.csh"
@@ -24,6 +20,5 @@ using namespace std;
 //complex mesh shaders
 #include "MyMeshPShader.csh"
 #include "MyMeshVShader.csh"
-
-
+ 
 #include "assets/Stonehenge/StoneHenge.h"

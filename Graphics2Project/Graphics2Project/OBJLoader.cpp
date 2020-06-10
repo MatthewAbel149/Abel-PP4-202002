@@ -135,12 +135,11 @@ bool LoadOBJ(
 
 bool LoadOBJ(
 	const char* modelPath,
-	//const char* materialPath, //for loading multitextured objects
 	const wchar_t* texturePath,
 	MODEL_DATA* modelData,
 	CD3D11_BUFFER_DESC* bDesc,
 	D3D11_SUBRESOURCE_DATA* subData,
-	ID3D11Device* myDev) 
+	ID3D11Device* myDev)
 {
 
 	HRESULT hr;
@@ -178,6 +177,44 @@ bool LoadOBJ(
 }
 
 
+bool LoadModelFromOBJ(
+	const wchar_t* texturePath,
+	OBJ_DATA OBJData,
+	MODEL_DATA* modelData,
+	CD3D11_BUFFER_DESC* bDesc,
+	D3D11_SUBRESOURCE_DATA* subData,
+	ID3D11Device* myDev)
+{
+	HRESULT hr;
+
+
+	modelData->vertexList = OBJData.vertexList;
+	modelData->indexList = OBJData.indexList;
+
+
+	bDesc->BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bDesc->ByteWidth = modelData->vertexList.size() * sizeof(OBJ_VERTEX);
+	bDesc->CPUAccessFlags = 0;
+	bDesc->MiscFlags = 0;
+	bDesc->StructureByteStride = 0;
+	bDesc->Usage = D3D11_USAGE_IMMUTABLE;
+	subData->pSysMem = modelData->vertexList.data();
+
+	hr = myDev->CreateBuffer(bDesc, subData, &(modelData->vBufferData));
+
+	//index buffer mesh
+	bDesc->BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bDesc->ByteWidth = modelData->indexList.size() * sizeof(unsigned int);
+	subData->pSysMem = modelData->indexList.data();
+
+	hr = myDev->CreateBuffer(bDesc, subData, &(modelData->iBufferData));
+
+	hr = CreateDDSTextureFromFile(myDev, texturePath, nullptr, &(modelData->srvData));
+
+	return true;
+}
+
+
 void DisplayModel(
 	MODEL_DATA* modelData,
 	ID3D11SamplerState* samplerState,
@@ -188,7 +225,7 @@ void DisplayModel(
 	ID3D11VertexShader* vShader,
 	ID3D11InputLayout* layout,
 	WVP matrix
-	)
+)
 {
 	UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
 	UINT mesh_offsets[] = { 0 };
@@ -211,6 +248,6 @@ void DisplayModel(
 	myCon->Unmap(cBuff, 0);
 
 	myCon->PSSetSamplers(0, 1, &samplerState);
-	myCon->PSSetShaderResources(0, 1, &(modelData->srvData));
-	myCon->DrawIndexed(modelData->indexList.size(), 0, 0); 
+	if (modelData->srvData) myCon->PSSetShaderResources(0, 1, &(modelData->srvData));
+	myCon->DrawIndexed(modelData->indexList.size(), 0, 0);
 }

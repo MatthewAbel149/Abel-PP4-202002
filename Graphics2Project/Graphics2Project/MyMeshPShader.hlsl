@@ -14,7 +14,10 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 
 
 	textureColor = diffuse.Sample(sampleType, inputPixel.uvw);
-	//textureColor.xyzw = float4(3, 3, 112, 1);
+	
+	textureColor.x = textureColor.x * 0.3f;
+	textureColor.y = textureColor.y * 0.3f;
+	textureColor.z = textureColor.z * 0.3f;
 
 	return textureColor;
 }

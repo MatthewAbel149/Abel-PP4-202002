@@ -51,6 +51,7 @@ bool LoadOBJ(
 	const char* filepath,
 	OBJ_DATA* modelData);
 
+
 bool LoadOBJ(
 	const char* modelPath,
 	//const char* materialPath, //for loading multitextured objects
@@ -59,7 +60,16 @@ bool LoadOBJ(
 
 	CD3D11_BUFFER_DESC* bDesc,
 	D3D11_SUBRESOURCE_DATA* subData,
-	ID3D11Device* myDev );
+	ID3D11Device* myDev);
+
+bool LoadModelFromOBJ(
+	const wchar_t* texturePath,
+	OBJ_DATA OBJData,
+	MODEL_DATA* modelData,
+	CD3D11_BUFFER_DESC* bDesc,
+	D3D11_SUBRESOURCE_DATA* subData,
+	ID3D11Device* myDev);
+
 
 bool ReadMTL(
 	const char* file,
