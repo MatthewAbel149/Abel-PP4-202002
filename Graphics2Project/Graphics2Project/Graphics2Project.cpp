@@ -109,6 +109,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	int scene = 0;
 	float color[] = { .0f, .0f, .8f, 1.f }; //color of clear buffer
 
+
+
 	// Main message loop:
 	while (true) //GetMessage(&msg, nullptr, 0, 0))
 	{
@@ -286,15 +288,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 				temporaryMatrix = XMMatrixIdentity();
 
-				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 2.5, 0), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(6, 1, 6), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.2f, .2f, .2f), temporaryMatrix);
 
-				if (GetAsyncKeyState('B'))
-				{
-					myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-					temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(2.f, 2.f, 2.f), temporaryMatrix);
-				}
+			
 
-				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(burgerRot), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(burgerRot + 6.283), temporaryMatrix);
 
 				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 				//-----------------------------------------
@@ -315,18 +314,33 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//matrix math
 			temporaryMatrix = XMMatrixIdentity();
 
-			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(6, 1.6, 6), temporaryMatrix);
-			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-3.14159265/2), temporaryMatrix);
 
+
+			static bool up = false;
+			static float yValue = 4.6;
+
+			if (up) yValue += timer.Delta();
+			else    yValue -= timer.Delta();
+
+			if (yValue >= 4.6) up = false;
+			if (yValue <= 1.6) up = true;
+
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(6, yValue, 6), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-3.14159265/2), temporaryMatrix);
 			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
 
 			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
-			float totaltime = timer.TotalTime();
+
+
+			cBuffData bufferData;
+			bufferData.position = XMFLOAT3( myMatrices.wMatrix.m[0][2], myMatrices.wMatrix.m[1][2], myMatrices.wMatrix.m[2][2] );
+			//bufferData.position = XMFLOAT3(0,0,0);
+			bufferData.timer = timer.TotalTime();
 			
 			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			*((XMFLOAT3*)((&gpuBuffer)->pData)) = XMFLOAT3(1, 1, 1);
-			*((float*)((&gpuBuffer)->pData)) = totaltime;
+			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
 			myCon->Unmap(cBuffList[1], 0);
 			
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -338,6 +352,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				&gpuBuffer,
 				pHeaderShader,
 				vHeaderShader,
+				//pMeshShader,
+				//vMeshShader,
 				layoutVert,
 				myMatrices);
 

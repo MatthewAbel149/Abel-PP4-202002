@@ -19,15 +19,14 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 	float4 textureColor;
 
 
-	//textureColor = diffuse.Sample(sampleType, inputPixel.uvw);
-	//textureColor.xyzw = float4(3, 3, 112, 1);
+	textureColor = diffuse.Sample(sampleType, inputPixel.uvw);
 	
-	//textureColor = float4(cos(time), 0, 0, 0); //sin(time), tan(time), 0);
-textureColor = float4(
-	sin(position.x),
-	sin(position.y),
-	sin(time),
-	0);
+	textureColor *= float4(
+	saturate( sin(time)),
+	saturate( sin((position.y - 1.6) / 3)),
+	saturate( cos((position.y - 1.6) / 3)),
+	0
+	);
 
 
 	return textureColor;
