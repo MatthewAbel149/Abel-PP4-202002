@@ -8,38 +8,39 @@
 using namespace DirectX;
 using namespace std;
 
-struct MyVertex
-{
-	float pos[3];
-	float uvw[3];
-	float nrm[3];
-};
-
 unsigned int numVerts;
 
 // Math Stuff
 WVP myMatrices; //WVP struct was here
 
-//ID3D11Buffer* vBuff;
-//ID3D11InputLayout* vLayout;
-//ID3D11PixelShader* pShader; //null
-//ID3D11VertexShader* vShader; //null
+struct cBuffData {
+	WVP matrix;
+	//light/material variables
+	Light lightVar;
+};
 
+////////////////////////////////////////
+//	GLOBAL VARIABLE DECLARATIONS  
+////////////////////////////////////////
 // for init
 ID3D11Device* myDev;
 IDXGISwapChain* mySwap;
 ID3D11DeviceContext* myCon;
+
 // for drawing
 ID3D11RenderTargetView* myRtv;
 D3D11_VIEWPORT myPort;
 float aspectRatio = 1;
 
 
-ID3D11Buffer* cBuff; //shader variables
+//ID3D11Buffer* cBuff; //shader variables
+vector<ID3D11Buffer*> cBuffList;
 
 // Complex mesh variables
 ID3D11PixelShader* pMeshShader;
 ID3D11VertexShader* vMeshShader;
+ID3D11PixelShader* pLightShader;
+ID3D11VertexShader* vLightShader;
 ID3D11InputLayout* layoutVert;
 vector< MODEL_DATA > modelList;
 ID3D11SamplerState* samplerState;
@@ -51,9 +52,6 @@ ID3D11Texture2D* zBuffer;
 ID3D11DepthStencilView* zBufferView;
 
 HRESULT hr;
-
-SHORT xPosMouse = 0;
-SHORT yPosMouse = 0;
 
 XMMATRIX camera = XMMatrixMultiply(XMMatrixTranslation(0, 6, -15), XMMatrixIdentity());
 
@@ -234,7 +232,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 		D3D11_MAPPED_SUBRESOURCE gpuBuffer;
-		ID3D11Buffer* constants[] = { cBuff };
+		ID3D11Buffer* constants[] = { cBuffList[0] };
 
 		myCon->VSSetConstantBuffers(0, 1, constants);
 
@@ -242,21 +240,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (scene == 3) scene -= 3;
 
 
+		if (GetAsyncKeyState('R') & 1) 
+			camera = XMMatrixMultiply(XMMatrixTranslation(0, 6, -15), XMMatrixIdentity());
+
+
 		if (scene == 0) {
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 #pragma region Stonehenge
 			{
 
-				XMStoreFloat4x4(&myMatrices.wMatrix, XMMatrixTranslation(0, 0, 0));
+				XMStoreFloat4x4(&myMatrices.wMatrix, XMMatrixIdentity());
 
+				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				DisplayModel(
 					&modelList[0],
 					samplerState,
-					cBuff,
+					cBuffList[0],
 					myCon,
 					&gpuBuffer,
-					pMeshShader,
-					vMeshShader,
+					//pMeshShader,
+					//vMeshShader,
+					pLightShader,
+					vLightShader,
 					layoutVert,
 					myMatrices);
 			}
@@ -275,7 +279,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 				temporaryMatrix = XMMatrixIdentity();
 
-				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 3, 0), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 2.5, 0), temporaryMatrix);
 
 				if (GetAsyncKeyState('B'))
 				{
@@ -290,7 +294,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				DisplayModel(
 					&modelList[2],
 					samplerState,
-					cBuff,
+					cBuffList[0],
 					myCon,
 					&gpuBuffer,
 					pMeshShader,
@@ -299,42 +303,42 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
-
 		}
 
 
 		if (scene == 1) {
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 #pragma region Pineapple
 			{
 				//*------------------- Load complex mesh
 				//matrix math
 				temporaryMatrix = XMMatrixIdentity();
 
-				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(-5, 10, 0), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(-5, 1.25, 10), temporaryMatrix);
 
-				temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.1f, .1f, .1f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.025f, .025f, .025f), temporaryMatrix);
 
-				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(rot), temporaryMatrix);
-
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationZ(.1), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(.1), temporaryMatrix);
 				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
 
+
+
+				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				DisplayModel(
 					&modelList[1],
 					samplerState,
-					cBuff,
+					cBuffList[0],
 					myCon,
 					&gpuBuffer,
-					pMeshShader,
-					vMeshShader,
+					//pMeshShader,
+					//vMeshShader,
+					pLightShader,
+					vLightShader,
 					layoutVert,
 					myMatrices);
 			}
 #pragma endregion
-
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 #pragma region Grid
 			{
 				//*------------------- Load complex mesh
@@ -350,10 +354,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
 
+				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 				DisplayModel(
 					&modelList[4],
 					samplerState,
-					cBuff,
+					cBuffList[0],
 					myCon,
 					&gpuBuffer,
 					pMeshShader,
@@ -362,7 +367,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
-
 		}
 
 
@@ -379,10 +383,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
 
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			DisplayModel(
 				&modelList[3],
 				samplerState,
-				cBuff,
+				cBuffList[0],
 				myCon,
 				&gpuBuffer,
 				pMeshShader,
@@ -400,7 +405,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	//Release all D3D11 interfaces
 
-	cBuff->Release();
+	for (unsigned int i = 0; i < cBuffList.size(); ++i)
+	{
+		cBuffList[i]->Release();
+	}
+	cBuffList.clear();
+
 	myCon->Release();
 	mySwap->Release();
 	myDev->Release();
@@ -408,6 +418,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	pMeshShader->Release();
 	vMeshShader->Release();
+	pLightShader->Release();
+	vLightShader->Release();
 	layoutVert->Release();
 
 	samplerState->Release();
@@ -416,11 +428,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	for (unsigned int i = 0; i < modelList.size(); ++i)
 	{
-		modelList[i].iBufferData->Release();
-		modelList[i].vBufferData->Release();
-		modelList[i].srvData->Release();
+		if (modelList[i].iBufferData) modelList[i].iBufferData->Release();
+		if (modelList[i].vBufferData) modelList[i].vBufferData->Release();
+		if (modelList[i].srvData)	  modelList[i].srvData->Release();
 	}
-
+	
 	return (int)msg.wParam;
 }
 
@@ -515,16 +527,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #pragma endregion
 
 	MODEL_DATA tempModel;
+	ID3D11Buffer* tempBuff;
 
 
 	// load on cardf
 	CD3D11_BUFFER_DESC bDesc;
 	D3D11_SUBRESOURCE_DATA subData;
+	/*
+	///////////////////////////////
+	// CREATE CONSTANT BUFFER
+	///////////////////////////////
 	ZeroMemory(&bDesc, sizeof(bDesc));
-	ZeroMemory(&subData, sizeof(subData));
-
-	//--------------------
-	// create constant buffer
+	ZeroMemory(&subData, sizeof(subData));	
 
 	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bDesc.ByteWidth = sizeof(WVP);
@@ -533,10 +547,32 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	bDesc.StructureByteStride = 0;
 	bDesc.Usage = D3D11_USAGE_DYNAMIC;
 
-	hr = myDev->CreateBuffer(&bDesc, nullptr, &cBuff);
+	hr = myDev->CreateBuffer(&bDesc, nullptr, &tempBuff);
 
-	//--------------------
-	// Create sampler
+	cBuffList.push_back(tempBuff);
+	*/
+	////////////////////////////////////////////////////////
+	
+	//*/
+	ZeroMemory(&bDesc, sizeof(bDesc));
+	ZeroMemory(&subData, sizeof(subData));
+	//tempBuff->Release();
+
+	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bDesc.ByteWidth = sizeof(WVP);
+	bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	bDesc.MiscFlags = 0;
+	bDesc.StructureByteStride = 0;
+	bDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+	hr = myDev->CreateBuffer(&bDesc, nullptr, &tempBuff);
+
+	cBuffList.push_back(tempBuff);
+	//*/
+	
+	///////////////////////////////
+	// CREATE SAMPLER
+	///////////////////////////////
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -544,15 +580,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	samplerDesc.MipLODBias = 0.0f;
 	samplerDesc.MaxAnisotropy = 1;
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	//samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 	samplerDesc.MinLOD = -FLT_MAX;
 	samplerDesc.MaxLOD = FLT_MAX;
 
 	hr = myDev->CreateSamplerState(&samplerDesc, &samplerState);
 
 #pragma region StoneHenge
-	//----------------------------------------------------
-	//header model loading : StoneHenge
-	//----------------------------------------------------
+	//////////////////////////////////////////////////////
+	// HEADER MODEL LOADING : StoneHenge
+	//////////////////////////////////////////////////////
+
 	OBJ_DATA ObjData;
 	OBJ_VERTEX tempVertData;
 
@@ -645,6 +683,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	// Procedural Mesh : Grid
 	//----------------------------------------------------
 
+#pragma region MakeGrid()
+	
 	//bool MakeGrid(unsigned int halfSize, float spaceBetweenLines, OBJ_DATA* outputData)
 	{
 
@@ -652,28 +692,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		float spaceBetweenLines = 0.25f;
 		//if (spaceBetweenLines <= 0)
 			//return false;
+		//if (halfSize <= 0)
+			//return false;
 
-
-		for (float i = -halfSize; i < halfSize; i += spaceBetweenLines)
-		{
-			for (float j = -halfSize; j < halfSize; j += spaceBetweenLines)
-			{
-				tempVertData.pos = { i, 0, j };
-				tempVertData.tex = { 0, 0, 0 };
-				tempVertData.nrm = { 0, 1, 0 };
-
-				ObjData.vertexList.push_back(tempVertData);
-			}
-		}
 		int multiplier = 1/( spaceBetweenLines * spaceBetweenLines);
 		int halfMultiplier = 1 / spaceBetweenLines;
 		int totalVerts = (halfSize * halfSize * 4 * multiplier);
 		int hIndices = totalVerts - (halfSize * 2 * halfMultiplier);
 
-		for (unsigned int i = 1; i < totalVerts; ++i)
-		{
-			if ((i % (halfSize * 2 * halfMultiplier)))
-			{
+		for (float i = -halfSize; i < halfSize; i += spaceBetweenLines) {
+			for (float j = -halfSize; j < halfSize; j += spaceBetweenLines) {
+				tempVertData.pos = { i, 0, j };
+				tempVertData.tex = { 0, 0, 0 };
+				tempVertData.nrm = { 0, 1, 0 };
+
+				ObjData.vertexList.push_back(tempVertData);
+		}	}
+
+		for (unsigned int i = 1; i < totalVerts; ++i) {
+			if ((i % (halfSize * 2 * halfMultiplier))) {
 				ObjData.indexList.push_back(i - 1);
 				ObjData.indexList.push_back(i);
 			}
@@ -682,12 +719,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 			{
 				ObjData.indexList.push_back(i - 1);
 				ObjData.indexList.push_back(i + (halfSize * 2 * (halfMultiplier) - 1));
-			}
-		}
-	}
-
+	}	}	}
+#pragma endregion
+	
 	LoadModelFromOBJ(
-		L"assets\Fruit\Coconut\cocoSS00.dds",
+		//L"assets/Fruit/Coconut/cocoSS00.dds",
+		L"assets/Fruit/Papaya/PapaSS00.dds",
 		ObjData,
 		&tempModel,
 		&bDesc,
@@ -704,6 +741,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	hr = myDev->CreatePixelShader(&MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
 	hr = myDev->CreateVertexShader(&MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
+
+	hr = myDev->CreatePixelShader (&MyPShader, sizeof(MyPShader), nullptr, &pLightShader);
+	hr = myDev->CreateVertexShader(&MyVShader, sizeof(MyVShader), nullptr, &vLightShader);
 
 	//layout
 	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {

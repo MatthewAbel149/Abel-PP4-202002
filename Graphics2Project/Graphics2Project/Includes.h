@@ -20,5 +20,8 @@ using namespace std;
 //complex mesh shaders
 #include "MyMeshPShader.csh"
 #include "MyMeshVShader.csh"
+//lighting shaders
+#include "MyPShader.csh"
+#include "MyVShader.csh"
  
 #include "assets/Stonehenge/StoneHenge.h"

@@ -1,8 +1,9 @@
 #pragma once
+#include "LightClass.h"
+
 #include <vector>
 #include <fstream>
 #include <math.h>
-#include <DirectXMath.h>
 #include <d3d11.h>
 #include "DDSTextureLoader.h"
 #include <wrl/client.h>
@@ -21,10 +22,10 @@ typedef struct _OBJ_VERTEX_ {
 	DirectX::XMFLOAT3 nrm;
 }OBJ_VERTEX;
 
-typedef struct _MTL_DATA_
+/*typedef struct _MTL_DATA_
 {
 
-}MTL_DATA;
+}MTL_DATA;*/
 
 typedef struct _OBJ_DATA_
 {
@@ -51,7 +52,6 @@ bool LoadOBJ(
 	const char* filepath,
 	OBJ_DATA* modelData);
 
-
 bool LoadOBJ(
 	const char* modelPath,
 	//const char* materialPath, //for loading multitextured objects
@@ -62,6 +62,7 @@ bool LoadOBJ(
 	D3D11_SUBRESOURCE_DATA* subData,
 	ID3D11Device* myDev);
 
+
 bool LoadModelFromOBJ(
 	const wchar_t* texturePath,
 	OBJ_DATA OBJData,
@@ -70,10 +71,6 @@ bool LoadModelFromOBJ(
 	D3D11_SUBRESOURCE_DATA* subData,
 	ID3D11Device* myDev);
 
-
-bool ReadMTL(
-	const char* file,
-	MTL_DATA* materialData);
 
 void DisplayModel(
 	MODEL_DATA* modelData,
@@ -86,3 +83,9 @@ void DisplayModel(
 	ID3D11InputLayout* layout,
 	WVP matrix
 );
+
+/*
+bool ReadMTL(
+	const char* file,
+	MTL_DATA* materialData);
+*/
