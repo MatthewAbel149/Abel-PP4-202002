@@ -5,6 +5,9 @@
 
 //#define SAFEDELETE(*ptr) if(ptr) { ptr. }
 
+bool MakeGrid(unsigned int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERTEX tempVertData);
+
+
 using namespace DirectX;
 using namespace std;
 
@@ -13,11 +16,12 @@ unsigned int numVerts;
 // Math Stuff
 WVP myMatrices; //WVP struct was here
 
-struct cBuffData {
-	WVP matrix;
+typedef struct _cBuffData_ {
+	XMFLOAT3 position;
+	float timer;
 	//light/material variables
-	Light lightVar;
-};
+	//Light lightVar;
+} cBuffData;
 
 ////////////////////////////////////////
 //	GLOBAL VARIABLE DECLARATIONS  
@@ -36,11 +40,14 @@ float aspectRatio = 1;
 //ID3D11Buffer* cBuff; //shader variables
 vector<ID3D11Buffer*> cBuffList;
 
+
 // Complex mesh variables
 ID3D11PixelShader* pMeshShader;
 ID3D11VertexShader* vMeshShader;
 ID3D11PixelShader* pLightShader;
 ID3D11VertexShader* vLightShader;
+ID3D11PixelShader*  pHeaderShader;
+ID3D11VertexShader* vHeaderShader;
 ID3D11InputLayout* layoutVert;
 vector< MODEL_DATA > modelList;
 ID3D11SamplerState* samplerState;
@@ -303,6 +310,38 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
+#pragma region Trash Can
+
+			//matrix math
+			temporaryMatrix = XMMatrixIdentity();
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(6, 1.6, 6), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-3.14159265/2), temporaryMatrix);
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+
+			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
+			float totaltime = timer.TotalTime();
+			
+			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((XMFLOAT3*)((&gpuBuffer)->pData)) = XMFLOAT3(1, 1, 1);
+			*((float*)((&gpuBuffer)->pData)) = totaltime;
+			myCon->Unmap(cBuffList[1], 0);
+			
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			DisplayModel(
+				&modelList[5],
+				samplerState,
+				cBuffList[0],
+				myCon,
+				&gpuBuffer,
+				pHeaderShader,
+				vHeaderShader,
+				layoutVert,
+				myMatrices);
+
+#pragma endregion
 		}
 
 
@@ -396,6 +435,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myMatrices);
 
 #pragma endregion
+
 		}
 
 		mySwap->Present(1, 0);
@@ -420,6 +460,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	vMeshShader->Release();
 	pLightShader->Release();
 	vLightShader->Release();
+	pHeaderShader->Release();
+	vHeaderShader->Release();
 	layoutVert->Release();
 
 	samplerState->Release();
@@ -527,18 +569,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #pragma endregion
 
 	MODEL_DATA tempModel;
-	ID3D11Buffer* tempBuff;
+	ID3D11Buffer* tempBuff = nullptr;
 
 
 	// load on cardf
 	CD3D11_BUFFER_DESC bDesc;
 	D3D11_SUBRESOURCE_DATA subData;
-	/*
+	ZeroMemory(&bDesc, sizeof(bDesc));
+	ZeroMemory(&subData, sizeof(subData));	
+	
 	///////////////////////////////
 	// CREATE CONSTANT BUFFER
 	///////////////////////////////
-	ZeroMemory(&bDesc, sizeof(bDesc));
-	ZeroMemory(&subData, sizeof(subData));	
 
 	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bDesc.ByteWidth = sizeof(WVP);
@@ -550,16 +592,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreateBuffer(&bDesc, nullptr, &tempBuff);
 
 	cBuffList.push_back(tempBuff);
-	*/
+	
 	////////////////////////////////////////////////////////
 	
 	//*/
-	ZeroMemory(&bDesc, sizeof(bDesc));
-	ZeroMemory(&subData, sizeof(subData));
 	//tempBuff->Release();
 
 	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	bDesc.ByteWidth = sizeof(WVP);
+	bDesc.ByteWidth = sizeof(cBuffData);
 	bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	bDesc.MiscFlags = 0;
 	bDesc.StructureByteStride = 0;
@@ -738,12 +778,55 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 #pragma endregion
 
+#pragma region Trash Can
+
+	LoadOBJ(
+		"assets/Trash Can/Trashcan.obj",
+		L"assets/Trash Can/Trashcan.dds",
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+	modelList.push_back(tempModel);
+
+#pragma endregion
+
+/*#pragma region Procedural Model
+
+
+
+	//----------------------------------------------------
+	// Procedural Mesh : Grid
+	//----------------------------------------------------
+
+	OBJ_DATA* outputData;
+	if( MakeGrid(1, 1, outputData) )
+
+	LoadModelFromOBJ(
+		//L"assets/Fruit/Coconut/cocoSS00.dds",
+		L"assets/Fruit/Papaya/PapaSS00.dds",
+		ObjData,
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+
+	modelList.push_back(tempModel);
+	ObjData.indexList.clear();
+	ObjData.vertexList.clear();
+
+#pragma endregion*/
 
 	hr = myDev->CreatePixelShader(&MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
 	hr = myDev->CreateVertexShader(&MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
 
 	hr = myDev->CreatePixelShader (&MyPShader, sizeof(MyPShader), nullptr, &pLightShader);
 	hr = myDev->CreateVertexShader(&MyVShader, sizeof(MyVShader), nullptr, &vLightShader);
+
+	hr = myDev->CreatePixelShader (&HeaderPShader, sizeof(HeaderPShader), nullptr, &pHeaderShader);
+	hr = myDev->CreateVertexShader(&HeaderVShader, sizeof(HeaderVShader), nullptr, &vHeaderShader);
 
 	//layout
 	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
@@ -831,4 +914,41 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return (INT_PTR)FALSE;
+}
+
+bool MakeGrid(int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERTEX tempVertData)
+{
+
+	if (spaceBetweenLines <= 0)
+		return false;
+	if (halfSize <= 0)
+		return false;
+
+	int multiplier = 1 / (spaceBetweenLines * spaceBetweenLines);
+	int halfMultiplier = 1 / spaceBetweenLines;
+	int totalVerts = (halfSize * halfSize * 4 * multiplier);
+	int hIndices = totalVerts - (halfSize * 2 * halfMultiplier);
+
+	for (float i = -halfSize; i < halfSize; i += spaceBetweenLines) {
+		for (float j = -halfSize; j < halfSize; j += spaceBetweenLines) {
+			tempVertData.pos = { i, 0, j };
+			tempVertData.tex = { 0, 0, 0 };
+			tempVertData.nrm = { 0, 1, 0 };
+
+			ObjData->vertexList.push_back(tempVertData);
+		}
+	}
+
+	for (unsigned int i = 1; i < totalVerts; ++i) {
+		if ((i % (halfSize * 2 * halfMultiplier))) {
+			ObjData->indexList.push_back(i - 1);
+			ObjData->indexList.push_back(i);
+		}
+
+		if ((i <= hIndices))
+		{
+			ObjData->indexList.push_back(i - 1);
+			ObjData->indexList.push_back(i + (halfSize * 2 * (halfMultiplier)-1));
+		}
+	}
 }
