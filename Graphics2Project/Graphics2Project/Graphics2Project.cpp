@@ -116,7 +116,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	POINT prevPoint;
 	float mouseDeltaX, mouseDeltaY;
 
-
+	bool showCursor = false;
+	bool showCursorPrev = true;
 
 
 	// Main message loop:
@@ -134,6 +135,43 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			break;
 #pragma endregion
 
+#pragma region camera cursor interaction
+
+		
+		if ( showCursor ^ showCursorPrev)
+			ShowCursor(showCursor);
+
+		showCursorPrev = showCursor;
+
+		if (GetAsyncKeyState(VK_ESCAPE) & 1)
+			showCursor = !showCursor;
+
+
+
+		prevPoint = originPoint;
+
+		if (showCursor)
+		prevPoint = cursorPoint;
+
+		if(GetCursorPos(&cursorPoint))
+		{ 
+			mouseDeltaX = cursorPoint.x - prevPoint.x;
+			mouseDeltaY = cursorPoint.y - prevPoint.y;
+			
+			mouseDeltaX = mouseDeltaX / 1920;
+			mouseDeltaY = mouseDeltaY / 1080;
+		}
+		
+		if (!showCursor)
+		SetCursorPos(originPoint.x, originPoint.y);
+
+		
+		//SetCursorPos(prevPoint.x, prevPoint.y);
+
+
+
+#pragma endregion
+
 
 		myCon->ClearRenderTargetView(myRtv, color); //clear buffer
 
@@ -147,75 +185,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		myCon->RSSetViewports(1, &myPort);
 
 
+		static float rot = 0;
+		rot += timer.Delta();
 
 #pragma region camera
 
-		prevPoint = cursorPoint;
-		prevPoint = originPoint;
-
-		if(GetCursorPos(&cursorPoint))
-		{ 
-			mouseDeltaX = cursorPoint.x - prevPoint.x;
-			mouseDeltaY = cursorPoint.y - prevPoint.y;
-			
-			mouseDeltaX = mouseDeltaX / 1920;
-			mouseDeltaY = mouseDeltaY / 1080;
-		}
-		
-		SetCursorPos(originPoint.x, originPoint.y);
-
-		
-		//SetCursorPos(prevPoint.x, prevPoint.y);
-
-
-
-
-
-
-		//world
-		static float rot = 0;
-		//rot += 0.05f; //replace with timer
-		rot += timer.Delta();
 
 		XMMATRIX temporaryMatrix = XMMatrixIdentity();
 
-#pragma region camera movement
+		/////////////////////////////////////
+		//	CAMERA CONTROLS
+		/////////////////////////////////////
 
-		//view
 		XMMATRIX yRotMatrix = XMMatrixIdentity();
-		static float camSpeed = 5.1f;
-		static float camSpeedDelta = 0.2f;
-
-		////////////////////////////////////////////////////////////////////////////
-
-		// TODO: Change to mouse delta
+		
+		float camSpeed = 5;
+		if (GetAsyncKeyState(VK_LSHIFT)) camSpeed = 15; // SPEED UP
 
 
-			yRotMatrix = XMMatrixRotationY(mouseDeltaX * camSpeed);
-			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(mouseDeltaY * camSpeed));
-		//if (GetAsyncKeyState('X')) //turn right
-		//{
-			//yRotMatrix = XMMatrixRotationY(timer.Delta() * camSpeed);
-		//}
-
-		//if (GetAsyncKeyState('Z')) //turn left
-		//{
-		//	yRotMatrix = XMMatrixRotationY(-timer.Delta() * camSpeed);
-		//}
+		yRotMatrix = XMMatrixRotationY(mouseDeltaX * 5);
+		temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(mouseDeltaY * 5));
 
 
-		//if (GetAsyncKeyState('C')) // pitch up
-		//{
-		//	temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(-timer.Delta() * camSpeed));
-		//}
-
-		//if (GetAsyncKeyState('V')) //turn left
-		//{
-		//	temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(+timer.Delta() * camSpeed));
-		//}
-
-		////////////////////////////////////////////////////////////////////////////
-
+		/////////////////////////////////////
+		// CAMERA WASD CONTROLS
+		/////////////////////////////////////
 		if (GetAsyncKeyState('W')) //forward
 		{
 			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(0, 0, timer.Delta() * camSpeed));
@@ -232,43 +226,44 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		{
 			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(timer.Delta() * camSpeed, 0, 0));
 		}
+		////////////////////////////////////////////////////////////////////////////
 
-		if (GetAsyncKeyState(VK_LSHIFT)) //up
+		camera = XMMatrixMultiply(temporaryMatrix, camera);
+		temporaryMatrix = XMMatrixIdentity();
+
+		XMVECTOR cameraVector = camera.r[3];
+
+		////////////////////////////////////////////////////////////////////////////
+
+		if (GetAsyncKeyState(VK_SPACE)) //up
 		{
 			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(0, timer.Delta() * camSpeed, 0));
 		}
-		if (GetAsyncKeyState(VK_LCONTROL)) //down
+		if (GetAsyncKeyState('C')) //down
 		{
 			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(0, -timer.Delta() * camSpeed, 0));
 		}
 
 		////////////////////////////////////////////////////////////////////////////
-
-		if ((GetAsyncKeyState('O') & 1) && camSpeed > camSpeedDelta) //slow down
-		{
-			camSpeed -= camSpeedDelta;
-		}
-		if ((GetAsyncKeyState('P') & 1) && camSpeed < 5.0) //speed up
-		{
-			camSpeed += camSpeedDelta;
-		}
+		
+		if (GetAsyncKeyState('R') & 1) // RESET CAMERA POSITION
+			camera = XMMatrixMultiply(XMMatrixTranslation(0, 6, -15), XMMatrixIdentity());
 
 
-		camera = XMMatrixMultiply(temporaryMatrix, camera);
-		XMVECTOR cameraVector = camera.r[3];
-
+		
 
 		camera = XMMatrixMultiply(camera, yRotMatrix);
 		camera.r[3] = cameraVector;
 
+		camera = XMMatrixMultiply(camera, temporaryMatrix);
 
-		XMStoreFloat4x4(&myMatrices.vMatrix, XMMatrixInverse(0, camera));
 
-#pragma endregion
+		XMStoreFloat4x4(&myMatrices.vMatrix, XMMatrixInverse(0, camera)); //move to view space
 
-		//projection
+
+
 		temporaryMatrix = XMMatrixPerspectiveFovLH(3.14f / 2.0f, aspectRatio, 0.1f, 1000);
-		XMStoreFloat4x4(&myMatrices.pMatrix, temporaryMatrix);
+		XMStoreFloat4x4(&myMatrices.pMatrix, temporaryMatrix); // move to projection space
 
 #pragma endregion
 
@@ -279,10 +274,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (GetAsyncKeyState('N') & 1) scene += 1;
 		if (scene == 3) scene -= 3;
-
-
-		if (GetAsyncKeyState('R') & 1) 
-			camera = XMMatrixMultiply(XMMatrixTranslation(0, 6, -15), XMMatrixIdentity());
 
 
 		if (scene == 0) {
@@ -369,18 +360,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-3.14159265/2), temporaryMatrix);
 
 
-			//temporaryMatrix = XMMatrixMultiply(
-			//	XMMatrixScaling(
-			//		cos(scaleValue) + 0.5f, 
-			//		cos(scaleValue) + 0.5f,
-			//		sin(scaleValue) + 0.5f),
-			//		//sin(scaleValue) + 0.5f), 
-			//	temporaryMatrix);
 			temporaryMatrix = XMMatrixMultiply(
 				XMMatrixScaling(
-					cos(scaleValue) + 0.5f, 
-					cos(scaleValue) + 0.5f,
-					sin(scaleValue) + 0.5f),
+					cos(scaleValue) + 0.22f, 
+					cos(scaleValue) + 0.22f,
+					sin(scaleValue) + 0.75f ),
 				temporaryMatrix);
 				
 			
@@ -611,8 +595,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	ShowWindow(hWnd, nCmdShow);
-	ShowCursor(false);
-	
 	UpdateWindow(hWnd);
 
 

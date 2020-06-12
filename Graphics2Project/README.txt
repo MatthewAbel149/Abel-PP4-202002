@@ -6,16 +6,16 @@ Camera:
 	A	: Left
 	D	: Right
 
-	LSHIFT	: Up
-	LCTRL	: Down
+	SPACE	: Up
+	C	: Down
 
 	O	: Decrease camera speed
 	P	: Increase camera speed
 
-	Z	: Turn left
-	X	: Turn right
-	C	: Pitch up
-	V	: Pitch down
+	MOUSE	: Rotate camera
+
+	R	: Reset camera
+	ESC	: Toggle cursor visibility
 
 Scene:
 	N	: Next scene
