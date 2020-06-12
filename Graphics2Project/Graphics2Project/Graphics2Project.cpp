@@ -42,16 +42,16 @@ vector<ID3D11Buffer*> cBuffList;
 
 
 // Complex mesh variables
-ID3D11PixelShader* pMeshShader;
-ID3D11VertexShader* vMeshShader;
-ID3D11PixelShader* pLightShader;
-ID3D11VertexShader* vLightShader;
-ID3D11PixelShader*  pHeaderShader;
-ID3D11VertexShader* vHeaderShader;
-ID3D11InputLayout* layoutVert;
+ID3D11PixelShader*   pMeshShader;
+ID3D11VertexShader*  vMeshShader;
+ID3D11PixelShader*   pLightShader;
+ID3D11VertexShader*  vLightShader;
+ID3D11PixelShader*   pHeaderShader;
+ID3D11VertexShader*  vHeaderShader;
+ID3D11InputLayout*   layoutVert;
 vector< MODEL_DATA > modelList;
-ID3D11SamplerState* samplerState;
-D3D11_SAMPLER_DESC samplerDesc;
+ID3D11SamplerState*  samplerState;
+D3D11_SAMPLER_DESC   samplerDesc;
 
 
 // Z buffer
@@ -109,6 +109,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	int scene = 0;
 	float color[] = { .0f, .0f, .8f, 1.f }; //color of clear buffer
 
+	//LPPOINT cursorPoint = nullptr;
+	POINT cursorPoint;
+	GetCursorPos(&cursorPoint);
+	POINT originPoint = cursorPoint;
+	POINT prevPoint;
+	float mouseDeltaX, mouseDeltaY;
+
+
 
 
 	// Main message loop:
@@ -142,6 +150,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 #pragma region camera
 
+		prevPoint = cursorPoint;
+		prevPoint = originPoint;
+
+		if(GetCursorPos(&cursorPoint))
+		{ 
+			mouseDeltaX = cursorPoint.x - prevPoint.x;
+			mouseDeltaY = cursorPoint.y - prevPoint.y;
+			
+			mouseDeltaX = mouseDeltaX / 1920;
+			mouseDeltaY = mouseDeltaY / 1080;
+		}
+		
+		SetCursorPos(originPoint.x, originPoint.y);
+
+		
+		//SetCursorPos(prevPoint.x, prevPoint.y);
+
+
+
+
+
+
 		//world
 		static float rot = 0;
 		//rot += 0.05f; //replace with timer
@@ -161,26 +191,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		// TODO: Change to mouse delta
 
 
-		if (GetAsyncKeyState('X')) //turn right
-		{
-			yRotMatrix = XMMatrixRotationY(timer.Delta() * camSpeed);
-		}
+			yRotMatrix = XMMatrixRotationY(mouseDeltaX * camSpeed);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(mouseDeltaY * camSpeed));
+		//if (GetAsyncKeyState('X')) //turn right
+		//{
+			//yRotMatrix = XMMatrixRotationY(timer.Delta() * camSpeed);
+		//}
 
-		if (GetAsyncKeyState('Z')) //turn left
-		{
-			yRotMatrix = XMMatrixRotationY(-timer.Delta() * camSpeed);
-		}
+		//if (GetAsyncKeyState('Z')) //turn left
+		//{
+		//	yRotMatrix = XMMatrixRotationY(-timer.Delta() * camSpeed);
+		//}
 
 
-		if (GetAsyncKeyState('C')) // pitch up
-		{
-			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(-timer.Delta() * camSpeed));
-		}
+		//if (GetAsyncKeyState('C')) // pitch up
+		//{
+		//	temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(-timer.Delta() * camSpeed));
+		//}
 
-		if (GetAsyncKeyState('V')) //turn left
-		{
-			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(+timer.Delta() * camSpeed));
-		}
+		//if (GetAsyncKeyState('V')) //turn left
+		//{
+		//	temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationX(+timer.Delta() * camSpeed));
+		//}
 
 		////////////////////////////////////////////////////////////////////////////
 
@@ -254,6 +286,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		if (scene == 0) {
+			color[0] = 0.0f;
+			color[1] = 0.0f;
+			color[2] = 0.8f;
+			color[3] = 1.0f;
+
 #pragma region Stonehenge
 			{
 
@@ -309,6 +346,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
+		myCon->VSSetConstantBuffers(0, 1, constants);
 #pragma region Trash Can
 
 			//matrix math
@@ -317,19 +355,36 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 			static bool up = false;
-			static float yValue = 4.6;
+			static float scaleValue = 0;
 
-			if (up) yValue += timer.Delta();
-			else    yValue -= timer.Delta();
+			if (up) scaleValue += timer.Delta() / 1.2f;
+			else	scaleValue -= timer.Delta() / 1.2f;
 
-			if (yValue >= 4.6) up = false;
-			if (yValue <= 1.6) up = true;
+			if (scaleValue >= 1) up = false;
+			if (scaleValue <= 0) up = true;
 
 
-			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(6, yValue, 6), temporaryMatrix);
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(6, 1.6, 6), temporaryMatrix);
 			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-3.14159265/2), temporaryMatrix);
-			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
+
+			//temporaryMatrix = XMMatrixMultiply(
+			//	XMMatrixScaling(
+			//		cos(scaleValue) + 0.5f, 
+			//		cos(scaleValue) + 0.5f,
+			//		sin(scaleValue) + 0.5f),
+			//		//sin(scaleValue) + 0.5f), 
+			//	temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(
+				XMMatrixScaling(
+					cos(scaleValue) + 0.5f, 
+					cos(scaleValue) + 0.5f,
+					sin(scaleValue) + 0.5f),
+				temporaryMatrix);
+				
+			
+			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
 			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
 
@@ -362,6 +417,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		if (scene == 1) {
+			color[0] = 0.0f;
+			color[1] = 0.8f;
+			color[2] = 0.8f;
+			color[3] = 1.0f;
+
 #pragma region Pineapple
 			{
 				//*------------------- Load complex mesh
@@ -426,6 +486,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		if (scene == 2) {
+			color[0] = 0.0f;
+			color[1] = 0.0f;
+			color[2] = 0.0f;
+			color[3] = 1.0f;
+
 #pragma region Planet
 
 			//matrix math
@@ -546,7 +611,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	ShowWindow(hWnd, nCmdShow);
+	ShowCursor(false);
+	
 	UpdateWindow(hWnd);
+
 
 	RECT myWinR;
 	GetClientRect(hWnd, &myWinR);

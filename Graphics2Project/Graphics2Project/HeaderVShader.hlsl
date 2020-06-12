@@ -23,7 +23,7 @@ cbuffer SHADER_VARS : register(b0)
 OutputVertex main(InputVertex input)
 {
     OutputVertex output = (OutputVertex)0;
-    output.xyzw = float4(input.pos, 1);
+    output.xyzw = float4(input.pos.x, input.pos.y, input.pos.z, 1);
     output.uvw.xyz = input.uvw;
 
     output.xyzw = mul(worldMatrix, output.xyzw);

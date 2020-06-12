@@ -23,8 +23,8 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 	
 	textureColor *= float4(
 	saturate( sin(time)),
-	saturate( sin((position.y - 1.6) / 3)),
-	saturate( cos((position.y - 1.6) / 3)),
+	saturate( cos(time)),
+	saturate( time * cos(position.y)),
 	0
 	);
 
