@@ -5,7 +5,7 @@
 
 //#define SAFEDELETE(*ptr) if(ptr) { ptr. }
 
-bool MakeGrid(unsigned int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERTEX tempVertData);
+bool MakeGrid(int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERTEX tempVertData);
 
 
 using namespace DirectX;
@@ -46,8 +46,10 @@ ID3D11PixelShader*   pMeshShader;
 ID3D11VertexShader*  vMeshShader;
 ID3D11PixelShader*   pLightShader;
 ID3D11VertexShader*  vLightShader;
-ID3D11PixelShader*   pHeaderShader;
-ID3D11VertexShader*  vHeaderShader;
+ID3D11PixelShader*   pColorShader;
+ID3D11VertexShader*  vColorShader;
+ID3D11VertexShader*  vTextureToGridShader;
+
 ID3D11InputLayout*   layoutVert;
 vector< MODEL_DATA > modelList;
 ID3D11SamplerState*  samplerState;
@@ -106,7 +108,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 
-	int scene = 0;
+	int scene = 1;
 	float color[] = { .0f, .0f, .8f, 1.f }; //color of clear buffer
 
 	//LPPOINT cursorPoint = nullptr;
@@ -231,7 +233,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		camera = XMMatrixMultiply(temporaryMatrix, camera);
 		temporaryMatrix = XMMatrixIdentity();
 
-		XMVECTOR cameraVector = camera.r[3];
 
 		////////////////////////////////////////////////////////////////////////////
 
@@ -247,9 +248,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		////////////////////////////////////////////////////////////////////////////
 		
 		if (GetAsyncKeyState('R') & 1) // RESET CAMERA POSITION
+		{
 			camera = XMMatrixMultiply(XMMatrixTranslation(0, 6, -15), XMMatrixIdentity());
+		
+			temporaryMatrix = XMMatrixIdentity();
+		
+		}
 
 
+		XMVECTOR cameraVector = camera.r[3];
 		
 
 		camera = XMMatrixMultiply(camera, yRotMatrix);
@@ -389,8 +396,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				cBuffList[0],
 				myCon,
 				&gpuBuffer,
-				pHeaderShader,
-				vHeaderShader,
+				pColorShader,
+				vColorShader,
 				//pMeshShader,
 				//vMeshShader,
 				layoutVert,
@@ -412,15 +419,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				//matrix math
 				temporaryMatrix = XMMatrixIdentity();
 
-				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(-5, 1.25, 10), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(-12, 6, 4), temporaryMatrix);
 
 				temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.025f, .025f, .025f), temporaryMatrix);
 
 				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationZ(.1), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(.314 * rot), temporaryMatrix);
 				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(.1), temporaryMatrix);
+
 				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
-
-
 
 
 				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -430,10 +437,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					cBuffList[0],
 					myCon,
 					&gpuBuffer,
-					//pMeshShader,
-					//vMeshShader,
-					pLightShader,
-					vLightShader,
+					pMeshShader,
+					vMeshShader,
 					layoutVert,
 					myMatrices);
 			}
@@ -444,16 +449,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				//matrix math
 				temporaryMatrix = XMMatrixIdentity();
 
-				//temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(-5, 10, 0), temporaryMatrix);
-
-				//temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.1f, .1f, .1f), temporaryMatrix);
-
-				//temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(rot), temporaryMatrix);
-
 				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
+				myCon->VSSetSamplers(0, 1, &samplerState);
+				myCon->VSSetShaderResources(0, 1, &(modelList[4].heightMap));
 
-				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				//myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+				
 				DisplayModel(
 					&modelList[4],
 					samplerState,
@@ -461,7 +464,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myCon,
 					&gpuBuffer,
 					pMeshShader,
-					vMeshShader,
+					vTextureToGridShader,
 					layoutVert,
 					myMatrices);
 			}
@@ -525,8 +528,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	vMeshShader->Release();
 	pLightShader->Release();
 	vLightShader->Release();
-	pHeaderShader->Release();
-	vHeaderShader->Release();
+	pColorShader->Release();
+	vColorShader->Release();
+	vTextureToGridShader->Release();
 	layoutVert->Release();
 
 	samplerState->Release();
@@ -535,9 +539,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	for (unsigned int i = 0; i < modelList.size(); ++i)
 	{
-		if (modelList[i].iBufferData) modelList[i].iBufferData->Release();
-		if (modelList[i].vBufferData) modelList[i].vBufferData->Release();
-		if (modelList[i].srvData)	  modelList[i].srvData->Release();
+		if (modelList[i].texture)	 
+			modelList[i].texture->Release();
+
+		if (modelList[i].heightMap)	  
+			modelList[i].heightMap->Release();
+
+		if (modelList[i].iBufferData) 
+			modelList[i].iBufferData->Release();
+
+		if (modelList[i].vBufferData) 
+			modelList[i].vBufferData->Release();
 	}
 	
 	return (int)msg.wParam;
@@ -636,6 +648,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	MODEL_DATA tempModel;
 	ID3D11Buffer* tempBuff = nullptr;
+	OBJ_DATA ObjData;
+	OBJ_VERTEX tempVertData;
 
 
 	// load on cardf
@@ -697,8 +711,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	// HEADER MODEL LOADING : StoneHenge
 	//////////////////////////////////////////////////////
 
-	OBJ_DATA ObjData;
-	OBJ_VERTEX tempVertData;
 
 	for (unsigned int i = 0; i < 1457; ++i)
 	{
@@ -782,55 +794,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #pragma endregion
 
 #pragma region Procedural Model
-
-
-
+	
 	//----------------------------------------------------
 	// Procedural Mesh : Grid
 	//----------------------------------------------------
-
-#pragma region MakeGrid()
 	
-	//bool MakeGrid(unsigned int halfSize, float spaceBetweenLines, OBJ_DATA* outputData)
-	{
+	
 
-		int halfSize = 50;
-		float spaceBetweenLines = 0.25f;
-		//if (spaceBetweenLines <= 0)
-			//return false;
-		//if (halfSize <= 0)
-			//return false;
 
-		int multiplier = 1/( spaceBetweenLines * spaceBetweenLines);
-		int halfMultiplier = 1 / spaceBetweenLines;
-		int totalVerts = (halfSize * halfSize * 4 * multiplier);
-		int hIndices = totalVerts - (halfSize * 2 * halfMultiplier);
-
-		for (float i = -halfSize; i < halfSize; i += spaceBetweenLines) {
-			for (float j = -halfSize; j < halfSize; j += spaceBetweenLines) {
-				tempVertData.pos = { i, 0, j };
-				tempVertData.tex = { 0, 0, 0 };
-				tempVertData.nrm = { 0, 1, 0 };
-
-				ObjData.vertexList.push_back(tempVertData);
-		}	}
-
-		for (unsigned int i = 1; i < totalVerts; ++i) {
-			if ((i % (halfSize * 2 * halfMultiplier))) {
-				ObjData.indexList.push_back(i - 1);
-				ObjData.indexList.push_back(i);
-			}
-
-			if ((i <= hIndices))
-			{
-				ObjData.indexList.push_back(i - 1);
-				ObjData.indexList.push_back(i + (halfSize * 2 * (halfMultiplier) - 1));
-	}	}	}
-#pragma endregion
+	MakeGrid(50, 1.0f, &ObjData, tempVertData);
+	//MakeGrid(2, 1.0f, &ObjData, tempVertData);
+	
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Misc Textures/Island.dds", nullptr, &(tempModel.heightMap));
 	
 	LoadModelFromOBJ(
-		//L"assets/Fruit/Coconut/cocoSS00.dds",
-		L"assets/Fruit/Papaya/PapaSS00.dds",
+		L"assets/Misc Textures/Island Texture.dds",
 		ObjData,
 		&tempModel,
 		&bDesc,
@@ -841,6 +819,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	modelList.push_back(tempModel);
 	ObjData.indexList.clear();
 	ObjData.vertexList.clear();
+	tempModel.heightMap = nullptr;
 
 #pragma endregion
 
@@ -891,8 +870,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreatePixelShader (&MyPShader, sizeof(MyPShader), nullptr, &pLightShader);
 	hr = myDev->CreateVertexShader(&MyVShader, sizeof(MyVShader), nullptr, &vLightShader);
 
-	hr = myDev->CreatePixelShader (&HeaderPShader, sizeof(HeaderPShader), nullptr, &pHeaderShader);
-	hr = myDev->CreateVertexShader(&HeaderVShader, sizeof(HeaderVShader), nullptr, &vHeaderShader);
+	hr = myDev->CreatePixelShader (&ColorShiftPShader, sizeof(ColorShiftPShader), nullptr, &pColorShader);
+	hr = myDev->CreateVertexShader(&ColorShiftVShader, sizeof(ColorShiftVShader), nullptr, &vColorShader);
+
+	hr = myDev->CreateVertexShader(&TextureToGridVShader, sizeof(TextureToGridVShader), nullptr, &vTextureToGridShader);
 
 	//layout
 	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
@@ -985,6 +966,56 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 bool MakeGrid(int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERTEX tempVertData)
 {
 
+	// TODO : Fix edge not having line
+
+	if (spaceBetweenLines <= 0)
+		return false;
+	if (halfSize <= 0)
+		return false;
+
+	int size = halfSize * 2;
+	int multiplier = 1 / (spaceBetweenLines * spaceBetweenLines);
+	int halfMultiplier = 1 / spaceBetweenLines;
+	int totalVerts = (size * size * multiplier);
+	int hIndices = totalVerts - (size * halfMultiplier);
+
+	for (float i = -halfSize; i < halfSize; i += spaceBetweenLines) {
+		for (float j = -halfSize; j < halfSize; j += spaceBetweenLines) {
+			tempVertData.pos = { i, 0, j };
+			tempVertData.tex = { 
+				((i + halfSize) / size),
+				1 - ((j + halfSize) / size), 
+				0 };
+			tempVertData.nrm = { 0, 1, 0 };
+
+			ObjData->vertexList.push_back(tempVertData);
+		}
+	}
+
+	for (unsigned int i = 1; i < totalVerts; ++i) {
+		if (i <= hIndices && (i % (size * halfMultiplier)))
+		{
+			ObjData->indexList.push_back(i - 1);
+			ObjData->indexList.push_back(i);
+			ObjData->indexList.push_back(i + size);
+
+			ObjData->indexList.push_back(i + size);
+			ObjData->indexList.push_back(i + size - 1);
+			ObjData->indexList.push_back(i - 1);
+		}
+	}
+	/*	for (unsigned int i = 1; i < totalVerts; ++i) {
+		if (!(i % (halfSize * 2 * halfMultiplier)))	{	}
+		if ((i <= hIndices))	{
+			ObjData->indexList.push_back(i - 1);
+			ObjData->indexList.push_back(i + (halfSize * 2 * (halfMultiplier)-1)); }	}	*/
+	return true;
+}
+
+
+/*bool MakeGrid(int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERTEX tempVertData)
+{
+
 	if (spaceBetweenLines <= 0)
 		return false;
 	if (halfSize <= 0)
@@ -1017,4 +1048,6 @@ bool MakeGrid(int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERT
 			ObjData->indexList.push_back(i + (halfSize * 2 * (halfMultiplier)-1));
 		}
 	}
-}
+
+	return true;
+}*/

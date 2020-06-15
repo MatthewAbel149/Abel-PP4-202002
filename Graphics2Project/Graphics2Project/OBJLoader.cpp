@@ -169,7 +169,7 @@ bool LoadOBJ(
 
 		hr = myDev->CreateBuffer(bDesc, subData, &(modelData->iBufferData));
 
-		hr = CreateDDSTextureFromFile(myDev, texturePath, nullptr, &(modelData->srvData));
+		hr = CreateDDSTextureFromFile(myDev, texturePath, nullptr, &(modelData->texture));
 
 		return true;
 	}
@@ -209,7 +209,7 @@ bool LoadModelFromOBJ(
 
 	hr = myDev->CreateBuffer(bDesc, subData, &(modelData->iBufferData));
 
-	hr = CreateDDSTextureFromFile(myDev, texturePath, nullptr, &(modelData->srvData));
+	hr = CreateDDSTextureFromFile(myDev, texturePath, nullptr, &(modelData->texture));
 
 	return true;
 }
@@ -248,6 +248,6 @@ void DisplayModel(
 	myCon->Unmap(cBuff, 0);
 
 	myCon->PSSetSamplers(0, 1, &samplerState);
-	if (modelData->srvData) myCon->PSSetShaderResources(0, 1, &(modelData->srvData));
+	/*if (modelData->srvData)*/ myCon->PSSetShaderResources(0, 1, &(modelData->texture));
 	myCon->DrawIndexed(modelData->indexList.size(), 0, 0);
 }

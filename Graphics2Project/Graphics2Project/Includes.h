@@ -15,13 +15,15 @@ using namespace std;
 #include <zmouse.h>
 
 //header model shaders
-#include "HeaderPShader.csh"
-#include "HeaderVShader.csh"
+#include "ColorShiftPShader.csh"
+#include "ColorShiftVShader.csh"
 //complex mesh shaders
 #include "MyMeshPShader.csh"
 #include "MyMeshVShader.csh"
 //lighting shaders
 #include "MyPShader.csh"
 #include "MyVShader.csh"
+//other shaders
+#include "TextureToGridVShader.csh"
  
 #include "assets/Stonehenge/StoneHenge.h"

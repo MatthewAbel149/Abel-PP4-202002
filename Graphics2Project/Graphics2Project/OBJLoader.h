@@ -41,7 +41,8 @@ typedef struct _MODEL_DATA_
 	std::vector < OBJ_VERTEX > vertexList;
 	std::vector< unsigned int > indexList;
 
-	ID3D11ShaderResourceView* srvData	= nullptr;
+	ID3D11ShaderResourceView* texture	= nullptr;
+	ID3D11ShaderResourceView* heightMap	= nullptr;
 	ID3D11Buffer* iBufferData			= nullptr;
 	ID3D11Buffer* vBufferData			= nullptr;
 
