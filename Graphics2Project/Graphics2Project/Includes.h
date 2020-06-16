@@ -25,5 +25,7 @@ using namespace std;
 #include "MyVShader.csh"
 //other shaders
 #include "TextureToGridVShader.csh"
+#include "SkyboxPShader.csh"
+#include "SkyboxVShader.csh"
  
 #include "assets/Stonehenge/StoneHenge.h"

@@ -97,5 +97,7 @@
       <Filter>Source Files</Filter>
     </FxCompile>
     <FxCompile Include="TextureToGridVShader.hlsl" />
+    <FxCompile Include="SkyboxPShader.hlsl" />
+    <FxCompile Include="SkyboxVShader.hlsl" />
   </ItemGroup>
 </Project>

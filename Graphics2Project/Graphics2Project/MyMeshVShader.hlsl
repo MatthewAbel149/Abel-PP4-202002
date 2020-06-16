@@ -11,6 +11,7 @@ struct OutputVertex
 {
     float4 xyzw : SV_POSITION;
     float3 uvw  : OTEXCOORD;
+    float3 nrm  : NORMAL0;
 };
 
 cbuffer SHADER_VARS : register(b0)
@@ -25,6 +26,7 @@ OutputVertex main(InputVertex input)
     OutputVertex output = (OutputVertex)0;
     output.xyzw = float4(input.pos, 1);
     output.uvw.xyz = input.uvw;
+    output.nrm = input.nrm;
 
     output.xyzw = mul(worldMatrix, output.xyzw);
     output.xyzw = mul(viewMatrix, output.xyzw);
