@@ -99,5 +99,7 @@
     <FxCompile Include="TextureToGridVShader.hlsl" />
     <FxCompile Include="SkyboxPShader.hlsl" />
     <FxCompile Include="SkyboxVShader.hlsl" />
+    <FxCompile Include="ReflectionPShader.hlsl" />
+    <FxCompile Include="ReflectionVShader.hlsl" />
   </ItemGroup>
 </Project>

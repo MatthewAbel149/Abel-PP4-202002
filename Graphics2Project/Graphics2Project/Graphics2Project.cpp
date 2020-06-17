@@ -48,6 +48,8 @@ ID3D11PixelShader* pLightShader;
 ID3D11VertexShader* vLightShader;
 ID3D11PixelShader* pColorShader;
 ID3D11VertexShader* vColorShader;
+ID3D11PixelShader*  pReflectionShader;
+ID3D11VertexShader* vReflectionShader;
 ID3D11VertexShader* vTextureToGridShader;
 
 ID3D11InputLayout* layoutVert;
@@ -55,7 +57,7 @@ vector< MODEL_DATA > modelList;
 ID3D11SamplerState* samplerState;
 D3D11_SAMPLER_DESC   samplerDesc;
 
-//ID3D11ShaderResourceView* skyboxTexture; // Left Front Right Back Top Bottom
+vector<ID3D11ShaderResourceView*> skyboxTextures; // Left Front Right Back Top Bottom
 MODEL_DATA skybox;
 ID3D11PixelShader* pSkyboxShader;
 ID3D11VertexShader* vSkyboxShader;
@@ -113,7 +115,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 
-	int scene = 1;
+	int scene = 0;
 	float color[] = { .0f, .0f, .8f, 1.f }; //color of clear buffer
 
 
@@ -365,6 +367,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			color[2] = 0.8f;
 			color[3] = 1.0f;
 
+			skybox.texture = skyboxTextures[1];
+
 #pragma region Stonehenge
 			{
 
@@ -443,12 +447,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-3.14159265 / 2), temporaryMatrix);
 
 
-			temporaryMatrix = XMMatrixMultiply(
+			/*temporaryMatrix = XMMatrixMultiply(
 				XMMatrixScaling(
 					cos(scaleValue) + 0.22f,
 					cos(scaleValue) + 0.22f,
 					sin(scaleValue) + 0.75f),
-				temporaryMatrix);
+				temporaryMatrix);*/
 
 
 			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
@@ -457,13 +461,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 			cBuffData bufferData;
-			bufferData.position = XMFLOAT3(myMatrices.wMatrix.m[0][2], myMatrices.wMatrix.m[1][2], myMatrices.wMatrix.m[2][2]);
-			//bufferData.position = XMFLOAT3(0,0,0);
-			bufferData.timer = timer.TotalTime();
+			//bufferData.position = XMFLOAT3(myMatrices.wMatrix.m[0][2], myMatrices.wMatrix.m[1][2], myMatrices.wMatrix.m[2][2]);
+			//bufferData.timer = timer.TotalTime();
+			XMStoreFloat3(&bufferData.position, cameraVector);
+			//bufferData.timer = 0.0f;
+			//bufferData.timer = 1.0f;
+			bufferData.timer = 0.25f;
 
 			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
 			myCon->Unmap(cBuffList[1], 0);
+
+			myCon->PSSetShaderResources(1, 1, &skyboxTextures[1]);
 
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			DisplayModel(
@@ -472,10 +481,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				cBuffList[0],
 				myCon,
 				&gpuBuffer,
-				pColorShader,
-				vColorShader,
-				//pMeshShader,
-				//vMeshShader,
+				//pColorShader,
+				//vColorShader,
+				pReflectionShader,
+				vReflectionShader,
 				layoutVert,
 				myMatrices);
 
@@ -488,6 +497,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			color[1] = 0.8f;
 			color[2] = 0.8f;
 			color[3] = 1.0f;
+			
+			skybox.texture = skyboxTextures[1];
+
 
 #pragma region Pineapple
 			{
@@ -584,6 +596,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			color[2] = 0.0f;
 			color[3] = 1.0f;
 
+			skybox.texture = skyboxTextures[0];
+
+
 #pragma region Planet
 
 			//matrix math
@@ -625,8 +640,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	cBuffList.clear();
 
+	for (unsigned int i = 0; i < skyboxTextures.size(); ++i)
+	{
+		skyboxTextures[i]->Release();
+	}
+	skyboxTextures.clear();
+
 	skybox.iBufferData->Release();
-	if (skybox.texture) skybox.texture->Release();
 	skybox.vBufferData->Release();
 
 	myCon->Release();
@@ -642,6 +662,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	vLightShader->Release();
 	pColorShader->Release();
 	vColorShader->Release();
+	pReflectionShader->Release();
+	vReflectionShader->Release();
 	vTextureToGridShader->Release();
 	
 	layoutVert->Release();
@@ -825,7 +847,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 #pragma region CubeMap
 	
 	LoadOBJ(
-		//"assets/Misc Models/Skybox.obj",
 		"assets/Misc Models/Skybox.obj",
 		L"assets/Misc Models/SpaceCubemapTexture.dds",
 		&tempModel,
@@ -834,6 +855,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		myDev
 	);
 	skybox = tempModel;
+
+	skyboxTextures.push_back(tempModel.texture);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Misc Models/SkyTexture.dds", nullptr, &(tempModel.texture));
+	skyboxTextures.push_back(tempModel.texture);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Misc Models/FaceOfMarsTexture.dds", nullptr, &(tempModel.texture));
+	skyboxTextures.push_back(tempModel.texture);
+
+
 
 #pragma endregion
 
@@ -997,6 +1026,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	hr = myDev->CreatePixelShader(&SkyboxPShader, sizeof(SkyboxPShader), nullptr, &pSkyboxShader);
 	hr = myDev->CreateVertexShader(&SkyboxVShader, sizeof(SkyboxVShader), nullptr, &vSkyboxShader);
+
+	hr = myDev->CreatePixelShader (&ReflectionPShader, sizeof(ReflectionPShader), nullptr, &pReflectionShader);
+	hr = myDev->CreateVertexShader(&ReflectionVShader, sizeof(ReflectionVShader), nullptr, &vReflectionShader);
 
 	//layout
 	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
