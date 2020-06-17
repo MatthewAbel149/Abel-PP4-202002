@@ -243,8 +243,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		camera = XMMatrixMultiply(temporaryMatrix, camera);
 
-		
-
 		temporaryMatrix = XMMatrixIdentity();
 
 		////////////////////////////////////////////////////////////////////////////
@@ -286,19 +284,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma endregion
 
 
-
-
-
-
-
-
-
 		myCon->VSSetConstantBuffers(0, 1, constants);
 
 		if (GetAsyncKeyState('N') & 1) scene += 1;
 		if (scene == 3) scene -= 3;
-
-
 
 
 		{
@@ -306,21 +295,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			// SKYBOX RENDER
 			////////////////////////////////////////////////////////////////////////
 
-
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 
 			XMStoreFloat4x4(&myMatrices.wMatrix, XMMatrixTranslation(
 				XMVectorGetX(camera.r[3]),
 				XMVectorGetY(camera.r[3]),
 				XMVectorGetZ(camera.r[3])
-
 			));
-
-
-			//XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
-
-
 
 			UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
 			UINT mesh_offsets[] = { 0 };
@@ -336,25 +317,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//load the layout for the mesh
 			myCon->IASetInputLayout(layoutVert);
 
-
 			myCon->Map(cBuffList[0], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			*((WVP*)((&gpuBuffer)->pData)) = myMatrices;
 			myCon->Unmap(cBuffList[0], 0);
 
 			myCon->PSSetSamplers(0, 1, &samplerState);
-
 			myCon->PSSetShaderResources(0, 1, &skybox.texture);
 
-
 			myCon->DrawIndexed(skybox.indexList.size(), 0, 0);
-
-			////////////////////////////////////////////////////////////////////////
-			////////////////////////////////////////////////////////////////////////
-
 			myCon->ClearDepthStencilView(zBufferView, D3D11_CLEAR_DEPTH, 1, 0);
-
-
-			//*/
 		}
 
 
@@ -367,7 +338,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			color[2] = 0.8f;
 			color[3] = 1.0f;
 
-			skybox.texture = skyboxTextures[1];
+			skybox.texture = skyboxTextures[3];	
 
 #pragma region Stonehenge
 			{
@@ -472,7 +443,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
 			myCon->Unmap(cBuffList[1], 0);
 
-			myCon->PSSetShaderResources(1, 1, &skyboxTextures[1]);
+			myCon->PSSetShaderResources(1, 1, &skyboxTextures[3]);
 
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			DisplayModel(
@@ -860,6 +831,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = CreateDDSTextureFromFile(myDev, L"assets/Misc Models/SkyTexture.dds", nullptr, &(tempModel.texture));
 	skyboxTextures.push_back(tempModel.texture);
 	hr = CreateDDSTextureFromFile(myDev, L"assets/Misc Models/FaceOfMarsTexture.dds", nullptr, &(tempModel.texture));
+	skyboxTextures.push_back(tempModel.texture);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Misc Models/FieldTexture.dds", nullptr, &(tempModel.texture));
 	skyboxTextures.push_back(tempModel.texture);
 
 
