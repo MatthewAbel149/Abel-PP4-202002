@@ -101,5 +101,6 @@
     <FxCompile Include="SkyboxVShader.hlsl" />
     <FxCompile Include="ReflectionPShader.hlsl" />
     <FxCompile Include="ReflectionVShader.hlsl" />
+    <FxCompile Include="MyGShader.hlsl" />
   </ItemGroup>
 </Project>

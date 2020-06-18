@@ -23,6 +23,7 @@ using namespace std;
 //lighting shaders
 #include "MyPShader.csh"
 #include "MyVShader.csh"
+#include "MyGShader.csh"
 //other shaders
 #include "TextureToGridVShader.csh"
 #include "SkyboxPShader.csh"

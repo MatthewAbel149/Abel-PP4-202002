@@ -43,14 +43,17 @@ vector<ID3D11Buffer*> cBuffList;
 
 // Complex mesh variables
 ID3D11PixelShader* pMeshShader;
-ID3D11VertexShader* vMeshShader;
 ID3D11PixelShader* pLightShader;
-ID3D11VertexShader* vLightShader;
 ID3D11PixelShader* pColorShader;
-ID3D11VertexShader* vColorShader;
 ID3D11PixelShader*  pReflectionShader;
+
+ID3D11VertexShader* vMeshShader;
+ID3D11VertexShader* vLightShader;
+ID3D11VertexShader* vColorShader;
 ID3D11VertexShader* vReflectionShader;
 ID3D11VertexShader* vTextureToGridShader;
+
+ID3D11GeometryShader* gShader;
 
 ID3D11InputLayout* layoutVert;
 vector< MODEL_DATA > modelList;
@@ -131,6 +134,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	bool showCursor = false;
 	bool showCursorPrev = true;
+
+
+	static OBJ_VERTEX pointArr[14];
+	for (int i = 0; i < 2; ++i)
+	{
+		for (int j = 0; j < 2; ++j)
+		{
+			pointArr[i * 4 + j].pos = { i * 1.0f, 0, j * 1.0f };
+			pointArr[i * 4 + j].nrm = { 0, 1, 0 };
+			pointArr[i * 4 + j].tex = { 1, 1, 0 };
+		}
+	}
+
 
 
 	// Main message loop:
@@ -290,6 +306,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (scene == 3) scene -= 3;
 
 
+#pragma region skybox
 		{
 			////////////////////////////////////////////////////////////////////////
 			// SKYBOX RENDER
@@ -327,16 +344,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			myCon->DrawIndexed(skybox.indexList.size(), 0, 0);
 			myCon->ClearDepthStencilView(zBufferView, D3D11_CLEAR_DEPTH, 1, 0);
 		}
-
-
-
+#pragma endregion
 
 
 		if (scene == 0) {
-			color[0] = 0.0f;
-			color[1] = 0.0f;
-			color[2] = 0.8f;
-			color[3] = 1.0f;
 
 			skybox.texture = skyboxTextures[3];	
 
@@ -360,6 +371,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
+
 #pragma region King
 			{
 				//-----------------------------------------
@@ -401,43 +413,38 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//matrix math
 			temporaryMatrix = XMMatrixIdentity();
 
-
-
-			static bool up = false;
-			static float scaleValue = 0;
-
-			if (up) scaleValue += timer.Delta() / 1.2f;
-			else	scaleValue -= timer.Delta() / 1.2f;
-
-			if (scaleValue >= 1) up = false;
-			if (scaleValue <= 0) up = true;
-
-
-
 			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(6, 1.6, 6), temporaryMatrix);
 			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-3.14159265 / 2), temporaryMatrix);
-
-
-			/*temporaryMatrix = XMMatrixMultiply(
-				XMMatrixScaling(
-					cos(scaleValue) + 0.22f,
-					cos(scaleValue) + 0.22f,
-					sin(scaleValue) + 0.75f),
-				temporaryMatrix);*/
-
 
 			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
 			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
 
-
 			cBuffData bufferData;
+			XMStoreFloat3(&bufferData.position, cameraVector);
+			bufferData.timer = 0.25f;
+
+			//static bool up = false;
+			//static float scaleValue = 0;
+			//
+			//if (up) scaleValue += timer.Delta() / 1.2f;
+			//else	scaleValue -= timer.Delta() / 1.2f;
+			//
+			//if (scaleValue >= 1) up = false;
+			//if (scaleValue <= 0) up = true;
+			//
 			//bufferData.position = XMFLOAT3(myMatrices.wMatrix.m[0][2], myMatrices.wMatrix.m[1][2], myMatrices.wMatrix.m[2][2]);
 			//bufferData.timer = timer.TotalTime();
-			XMStoreFloat3(&bufferData.position, cameraVector);
+			//
+			//temporaryMatrix = XMMatrixMultiply(
+			//	XMMatrixScaling(
+			//		cos(scaleValue) + 0.22f,
+			//		cos(scaleValue) + 0.22f,
+			//		sin(scaleValue) + 0.75f),
+			//	temporaryMatrix);
+			//
 			//bufferData.timer = 0.0f;
 			//bufferData.timer = 1.0f;
-			bufferData.timer = 0.25f;
 
 			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
@@ -464,14 +471,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		if (scene == 1) {
-			color[0] = 0.0f;
-			color[1] = 0.8f;
-			color[2] = 0.8f;
-			color[3] = 1.0f;
-			
 			skybox.texture = skyboxTextures[1];
-
-
 #pragma region Pineapple
 			{
 				//*------------------- Load complex mesh
@@ -545,6 +545,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				//myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
+
 				DisplayModel(
 					&modelList[4],
 					samplerState,
@@ -555,6 +556,42 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					vTextureToGridShader,
 					layoutVert,
 					myMatrices);
+				{
+					//points
+					//pointArr;
+
+
+					//UINT mesh_strides[] = { sizeof(OBJ_VERTEX) };
+					//UINT mesh_offsets[] = { 0 };
+					//ID3D11Buffer* meshVB[] = { pointArr };
+
+					//myCon->IASetVertexBuffers(0, 1, meshVB, mesh_strides, mesh_offsets);
+					//myCon->IASetIndexBuffer(modelData->iBufferData, DXGI_FORMAT_R32_UINT, 0);
+
+					////load the vertex shader for the mesh
+					//myCon->VSSetShader(vShader, 0, 0);
+					////load the pixel shader for the mesh
+					//myCon->PSSetShader(pShader, 0, 0);
+					////load the layout for the mesh
+					//myCon->IASetInputLayout(layout);
+
+
+
+					//myCon->Map(cBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, gpuBuffer);
+					//*((WVP*)(gpuBuffer->pData)) = matrix;
+					//myCon->Unmap(cBuff, 0);
+
+					//myCon->PSSetSamplers(0, 1, &samplerState);
+					///*if (modelData->srvData)*/ myCon->PSSetShaderResources(0, 1, &(modelData->texture));
+					//myCon->DrawIndexed(modelData->indexList.size(), 0, 0);
+					////myCon->GSSetShader(gShader, 0, 0);
+					////myCon->GSSetConstantBuffers(0, 0, &cBuffList[0]);
+
+
+
+					////myCon->GSSetShader(nullptr, 0, 0);
+
+				}
 			}
 #pragma endregion
 
@@ -562,14 +599,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 		if (scene == 2) {
-			color[0] = 0.0f;
-			color[1] = 0.0f;
-			color[2] = 0.0f;
-			color[3] = 1.0f;
-
 			skybox.texture = skyboxTextures[0];
-
-
 #pragma region Planet
 
 			//matrix math
@@ -595,9 +625,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myMatrices);
 
 #pragma endregion
-
 		}
 
+		////////////////////////////////////////////////////
 		mySwap->Present(1, 0);
 
 		timer.Signal();
@@ -626,17 +656,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	myRtv->Release();
 
 	pSkyboxShader->Release();
-	vSkyboxShader->Release();
 	pMeshShader->Release();
-	vMeshShader->Release();
 	pLightShader->Release();
-	vLightShader->Release();
 	pColorShader->Release();
-	vColorShader->Release();
 	pReflectionShader->Release();
+
+	vSkyboxShader->Release();
+	vMeshShader->Release();
+	vLightShader->Release();
+	vColorShader->Release();
 	vReflectionShader->Release();
 	vTextureToGridShader->Release();
 	
+	gShader->Release();
+
 	layoutVert->Release();
 
 	samplerState->Release();
@@ -781,9 +814,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	////////////////////////////////////////////////////////
 
-	//*/
-	//tempBuff->Release();
-
 	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bDesc.ByteWidth = sizeof(cBuffData);
 	bDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -794,7 +824,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreateBuffer(&bDesc, nullptr, &tempBuff);
 
 	cBuffList.push_back(tempBuff);
-	//*/
 
 	///////////////////////////////
 	// CREATE SAMPLER
@@ -1002,6 +1031,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	hr = myDev->CreatePixelShader (&ReflectionPShader, sizeof(ReflectionPShader), nullptr, &pReflectionShader);
 	hr = myDev->CreateVertexShader(&ReflectionVShader, sizeof(ReflectionVShader), nullptr, &vReflectionShader);
+	
+	hr = myDev->CreateGeometryShader(&MyGShader, sizeof(MyGShader), nullptr, &gShader);
 
 	//layout
 	D3D11_INPUT_ELEMENT_DESC meshInputDesc[] = {
