@@ -10,18 +10,19 @@ struct OutputVertex
 
 	float3 WrlPos : POSITION;
 };
+struct Light{
+	float3 position;
+	float intensity;
+	float3 direction;
+	float range;
+	float3 color;
+	float attenuation;
+
+};
 
 cbuffer SHADER_VARS : register(b0)
 {
-	struct {
-		float3 position;
-		float intensity;
-		float3 direction;
-		float range;
-		float3 color;
-		float attenuation;
-
-	} light;
+	Light light[2];
 	float3 cameraPos;
 	float timer;
 };

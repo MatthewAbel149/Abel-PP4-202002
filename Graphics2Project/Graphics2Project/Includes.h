@@ -30,5 +30,6 @@ using namespace std;
 #include "SkyboxVShader.csh"
 #include "ReflectionPShader.csh"
 #include "ReflectionVShader.csh"
+#include "SunPShader.csh"
  
 #include "assets/Stonehenge/StoneHenge.h"

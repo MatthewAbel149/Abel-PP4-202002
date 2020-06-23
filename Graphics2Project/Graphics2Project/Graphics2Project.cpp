@@ -3,6 +3,8 @@
 #include "Includes.h"
 //void LoadModel(CD3D11_BUFFER_DESC&, D3D11_SUBRESOURCE_DATA&, const unsigned int**, const OBJ_VERT**);
 
+#define NUM_LIGHTS 2
+
 //#define SAFEDELETE(*ptr) if(ptr) { ptr. }
 
 bool MakeGrid(int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERTEX tempVertData);
@@ -17,7 +19,7 @@ unsigned int numVerts;
 WVP myMatrices;
 
 typedef struct _cBuffData_ {
-	Light lightVar;
+	Light lightVar[NUM_LIGHTS];
 
 	XMFLOAT3 position;
 	float timer;
@@ -45,7 +47,8 @@ vector<ID3D11Buffer*> cBuffList;
 ID3D11PixelShader* pMeshShader;
 ID3D11PixelShader* pLightShader;
 ID3D11PixelShader* pColorShader;
-ID3D11PixelShader*  pReflectionShader;
+ID3D11PixelShader* pReflectionShader;
+ID3D11PixelShader* pSunShader;
 
 ID3D11VertexShader* vMeshShader;
 ID3D11VertexShader* vLightShader;
@@ -136,14 +139,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	bufferData.position = XMFLOAT3(0, 0, 0);
 	bufferData.timer = 0;
 
-	bufferData.lightVar.position  = XMFLOAT3 (0, 0, 0);
-	bufferData.lightVar.direction = XMFLOAT3 (0, 0, 0);
-	bufferData.lightVar.color	  = XMFLOAT3 (0, 0, 0);
+	bufferData.lightVar[0].position = XMFLOAT3(0, 0, 0);
+	bufferData.lightVar[0].direction = XMFLOAT3(0, 0, 0);
+	bufferData.lightVar[0].color = XMFLOAT3(0, 0, 0);
+	bufferData.lightVar[0].range = 10;
+	bufferData.lightVar[0].intensity = 10;
+	bufferData.lightVar[0].attenuation = 10;
+	
+	bufferData.lightVar[1].position = XMFLOAT3(0, 0, 0);
+	bufferData.lightVar[1].direction = XMFLOAT3(0, 0, 0);
+	bufferData.lightVar[1].color = XMFLOAT3(0, 0, 0);
+	bufferData.lightVar[1].range = 10;
+	bufferData.lightVar[1].intensity = 10;
+	bufferData.lightVar[1].attenuation = 10;
+	
 
 	bool showCursor = false;
 	bool showCursorPrev = true;
 
 
+	/*
 	static OBJ_VERTEX pointArr[14];
 	for (int i = 0; i < 2; ++i)
 	{
@@ -154,6 +169,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			pointArr[i * 4 + j].tex = { 1, 1, 0 };
 		}
 	}
+	*/
 
 	float rot = 0;
 
@@ -357,7 +373,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (scene == 0) {
 
-			skybox.texture = skyboxTextures[3];	
+			skybox.texture = skyboxTextures[3];
+
+			bufferData.lightVar[0].position = XMFLOAT3(cos(rot) * 12, 3.f, sin(rot) * 12);
+			bufferData.lightVar[0].direction = XMFLOAT3(0.f, 0.f, 0.f);
+			bufferData.lightVar[0].color = XMFLOAT3(1.f, .3f, .3f);
+			bufferData.lightVar[0].attenuation = 1.0f;
+			bufferData.lightVar[0].range = 10.0f;
+			bufferData.lightVar[0].intensity = 1.0f;
+
+			bufferData.lightVar[1].position = XMFLOAT3(0, 0, 0);
+			bufferData.lightVar[1].direction = XMFLOAT3(-0.2f, -0.6f, -0.2f);
+			bufferData.lightVar[1].color = XMFLOAT3(.7f, .9f, 1.f);
+			bufferData.lightVar[1].range = 10;
+			bufferData.lightVar[1].intensity = 10;
+			bufferData.lightVar[1].attenuation = 10;
 
 #pragma region Stonehenge
 			{
@@ -367,35 +397,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-			//////////////////////////////////////////////
-			// FLIP FLOP
-			//////////////////////////////////////////////
-			/*
-			static bool up = false;
-			static float lightrot = 0;
-			
-			if (up) lightrot += timer.Delta();
-			else	lightrot -= timer.Delta();
-			
-			if (lightrot >= 1) up = false;
-			if (lightrot <= -1) up = true;
-			*/
-			//////////////////////////////////////////////
+				//////////////////////////////////////////////
+				// FLIP FLOP
+				//////////////////////////////////////////////
+				/*
+				static bool up = false;
+				static float lightrot = 0;
+
+				if (up) lightrot += timer.Delta();
+				else	lightrot -= timer.Delta();
+
+				if (lightrot >= 1) up = false;
+				if (lightrot <= -1) up = true;
+				*/
+				//////////////////////////////////////////////
+
 
 				myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
 
-				bufferData.lightVar.position = XMFLOAT3(1.f, 1.f, 1.f);
-				bufferData.lightVar.direction = XMFLOAT3(-0.2f, -0.6f, -0.2f);
-				bufferData.lightVar.color = XMFLOAT3(.5f, .8f, .9f);
-
-
 				XMStoreFloat3(&bufferData.position, cameraVector);
-				bufferData.timer = 0.25f;
 
+				bufferData.timer = 0.1f;
+				///////////////////////////////////////////////////////////////////////////////
 
-				//bufferData.lightVar.attenuation = 1.0f;
-				//bufferData.lightVar.range = 1.0f;
-				//bufferData.lightVar.intensity = 1.0f;
 
 				hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 				*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
@@ -416,7 +440,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
-
 #pragma region King
 			{
 				//-----------------------------------------
@@ -452,8 +475,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
-			myCon->VSSetConstantBuffers(0, 1, constants);
 #pragma region Trash Can
+	
+			myCon->VSSetConstantBuffers(0, 1, constants);
 
 			//matrix math
 			temporaryMatrix = XMMatrixIdentity();
@@ -465,7 +489,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
 
-			
+
 			XMStoreFloat3(&bufferData.position, cameraVector);
 			bufferData.timer = 0.25f;
 
@@ -554,7 +578,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
-
 #pragma region Palm tree
 			{
 				//*------------------- Load complex mesh
@@ -582,7 +605,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
-
 #pragma region Grid
 			{
 				//*------------------- Load complex mesh
@@ -652,42 +674,60 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (scene == 2) {
 			skybox.texture = skyboxTextures[0];
+
+			bufferData.lightVar[0].position = XMFLOAT3(1.0f, 1.0f, 1.0f);
+			bufferData.lightVar[0].direction = XMFLOAT3(-0.2f, -0.6f, -0.2f);
+			//bufferData.lightVar[0].color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+			bufferData.lightVar[0].color = XMFLOAT3(0.0f, 0.0f, 0.0f);
+			bufferData.lightVar[0].attenuation = 1.0f;
+			bufferData.lightVar[0].range = 1.0f;
+			bufferData.lightVar[0].intensity = 1.0f;
+
+
+			bufferData.lightVar[1].position = XMFLOAT3(0.f, 60.f, 100.f);
+			bufferData.lightVar[1].direction = XMFLOAT3(0.f, 0.f, 0.f);
+			bufferData.lightVar[1].color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+			bufferData.lightVar[1].attenuation = 1.0f;
+			bufferData.lightVar[1].range = 250.0f;
+			bufferData.lightVar[1].intensity = 1.0f;
+			//bufferData.lightVar.direction = XMFLOAT3(-0.2f, -0.6f, -0.2f);
+			//bufferData.lightVar.direction = XMFLOAT3(0.f, 0.f, 0.f);
+
+
 #pragma region Planet
 
 			//matrix math
 			temporaryMatrix = XMMatrixIdentity();
 
-			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 0, 6), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(4.0f, 4.0f, 4.0f), temporaryMatrix);
+
+			//temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 0, 6), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 0, 0), temporaryMatrix);
 
 			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(rot / 10), temporaryMatrix);
+			//temporaryMatrix = XMMatrixMultiply(XMMatrixRotationZ(rot / 10), temporaryMatrix);
 
 			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
-			//////////////////////////////////////////////////////////////////////////
-			
+			/////////////////////////////////////////////////////////////////////////
+
 			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
 
-			bufferData.lightVar.position  = XMFLOAT3(  1.0f,  1.0f,  1.0f);
-			bufferData.lightVar.direction = XMFLOAT3( -0.2f, -0.6f, -0.2f);
-			bufferData.lightVar.color	  = XMFLOAT3(  1.0f,  1.0f,  1.0f);
 
 
 			XMStoreFloat3(&bufferData.position, cameraVector);
 			bufferData.timer = 0.25f;
 
 
-			//bufferData.lightVar.attenuation = 1.0f;
-			//bufferData.lightVar.range = 1.0f;
-			//bufferData.lightVar.intensity = 1.0f;
 
 			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
 			myCon->Unmap(cBuffList[1], 0);
-			
-			
-			///////////////////////////////////////////////////
-			
-			
+
+
+			/////////////////////////////////////////////////////////////////////////
+
+
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			DisplayModel(
 				&modelList[3],
@@ -699,6 +739,95 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				//vMeshShader,
 				pLightShader,
 				vLightShader,
+				layoutVert,
+				myMatrices);
+
+#pragma endregion
+#pragma region Moon
+
+			//matrix math
+			temporaryMatrix = XMMatrixIdentity();
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(50, 0, 25), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.004f, .004f, .004f), temporaryMatrix);
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationZ(3.14f / 3.f), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(3.14f / 2.f), temporaryMatrix);
+
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationY(rot / 10));
+
+			XMVECTOR moonVec = temporaryMatrix.r[3];
+
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationZ(rot));
+
+			temporaryMatrix.r[3] = moonVec;
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+			/////////////////////////////////////////////////////////////////////////
+
+			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
+
+
+
+			XMStoreFloat3(&bufferData.position, cameraVector);
+			bufferData.timer = 0.25f;
+
+
+			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+			myCon->Unmap(cBuffList[1], 0);
+
+
+			/////////////////////////////////////////////////////////////////////////
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			DisplayModel(
+				&modelList[7],
+				samplerState,
+				cBuffList[0],
+				myCon,
+				&gpuBuffer,
+				//pMeshShader,
+				//vMeshShader,
+				pLightShader,
+				vLightShader,
+				layoutVert,
+				myMatrices);
+
+#pragma endregion
+#pragma region Sun
+
+			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
+
+			///////////////////////////////////////////////////////////////////////////////
+
+			XMStoreFloat3(&bufferData.position, cameraVector);
+
+			bufferData.timer = rot;
+			//bufferData.timer = timer.TotalTime();
+
+			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+			myCon->Unmap(cBuffList[1], 0);
+			///////////////////////////////////////////////////////////////////////////////
+
+			//matrix math
+			temporaryMatrix = XMMatrixIdentity();
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0, 60, 100), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(40.f, 40.f, 40.f), temporaryMatrix);
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			DisplayModel(
+				&modelList[8],
+				samplerState,
+				cBuffList[0],
+				myCon,
+				&gpuBuffer,
+				pSunShader,
+				vMeshShader,
 				layoutVert,
 				myMatrices);
 
@@ -738,6 +867,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	pLightShader->Release();
 	pColorShader->Release();
 	pReflectionShader->Release();
+	pSunShader->Release();
 
 	vSkyboxShader->Release();
 	vMeshShader->Release();
@@ -745,7 +875,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	vColorShader->Release();
 	vReflectionShader->Release();
 	vTextureToGridShader->Release();
-	
+
 	gShader->Release();
 
 	layoutVert->Release();
@@ -927,7 +1057,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreateSamplerState(&samplerDesc, &samplerState);
 
 #pragma region CubeMap
-	
+
 	LoadOBJ(
 		"assets/Misc Models/Skybox.obj",
 		L"assets/Misc Models/SpaceCubemapTexture.dds",
@@ -1096,6 +1226,34 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 #pragma endregion
 
+#pragma region da moon
+
+	LoadOBJ(
+		"assets/Moon/moon.obj",
+		L"assets/Moon/moon_00_0.dds",
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+	modelList.push_back(tempModel);
+
+#pragma endregion
+
+#pragma region da sun
+
+	LoadOBJ(
+		"assets/Red Orb/Red Orb.obj",
+		L"assets/Red Orb/MODELS.bin.036.000.dds",
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+	modelList.push_back(tempModel);
+
+#pragma endregion
+
 
 	hr = myDev->CreatePixelShader(&MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
 	hr = myDev->CreateVertexShader(&MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
@@ -1106,14 +1264,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreatePixelShader(&ColorShiftPShader, sizeof(ColorShiftPShader), nullptr, &pColorShader);
 	hr = myDev->CreateVertexShader(&ColorShiftVShader, sizeof(ColorShiftVShader), nullptr, &vColorShader);
 
-	hr = myDev->CreateVertexShader(&TextureToGridVShader, sizeof(TextureToGridVShader), nullptr, &vTextureToGridShader);
-
 	hr = myDev->CreatePixelShader(&SkyboxPShader, sizeof(SkyboxPShader), nullptr, &pSkyboxShader);
 	hr = myDev->CreateVertexShader(&SkyboxVShader, sizeof(SkyboxVShader), nullptr, &vSkyboxShader);
 
-	hr = myDev->CreatePixelShader (&ReflectionPShader, sizeof(ReflectionPShader), nullptr, &pReflectionShader);
+	hr = myDev->CreatePixelShader(&ReflectionPShader, sizeof(ReflectionPShader), nullptr, &pReflectionShader);
 	hr = myDev->CreateVertexShader(&ReflectionVShader, sizeof(ReflectionVShader), nullptr, &vReflectionShader);
-	
+
+	hr = myDev->CreateVertexShader(&TextureToGridVShader, sizeof(TextureToGridVShader), nullptr, &vTextureToGridShader);
+
+	hr = myDev->CreatePixelShader(&SunPShader, sizeof(SunPShader), nullptr, &pSunShader);
+
 	hr = myDev->CreateGeometryShader(&MyGShader, sizeof(MyGShader), nullptr, &gShader);
 
 	//layout
