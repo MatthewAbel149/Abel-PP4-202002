@@ -29,14 +29,16 @@ OutputVertex main(InputVertex input)
     output.xyzw = float4(input.pos, 1);
     output.uvw.xyz = input.uvw;
 
-    output.xyzw = mul(worldMatrix, output.xyzw);
 
+
+    output.xyzw = mul(worldMatrix, output.xyzw);
     output.WrlPos = output.xyzw.xyz;
 
     output.xyzw = mul(viewMatrix, output.xyzw);
     output.xyzw = mul(projMatrix, output.xyzw);
 
     output.nrm.xyz = input.nrm.xyz;
+    output.nrm = (mul(worldMatrix, float4(output.nrm, 0))).xyz;
 
     return output;
 }

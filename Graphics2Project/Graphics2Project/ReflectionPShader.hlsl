@@ -13,6 +13,15 @@ struct OutputVertex
 
 cbuffer SHADER_VARS : register(b0)
 {
+	struct {
+		float3 position;
+		float intensity;
+		float3 direction;
+		float range;
+		float3 color;
+		float attenuation;
+
+	} light;
 	float3 cameraPos;
 	float timer;
 };

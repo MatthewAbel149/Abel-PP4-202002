@@ -22,6 +22,7 @@ typedef struct _OBJ_VERTEX_ {
 	DirectX::XMFLOAT3 nrm;
 }OBJ_VERTEX;
 
+
 /*typedef struct _MTL_DATA_
 {
 

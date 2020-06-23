@@ -1,5 +1,6 @@
 #include "LightClass.h"
 
+/*
 void Light::SetPosition (float x, float y, float z) {
 	position.x = x;
 	position.y = y;
@@ -15,3 +16,4 @@ void Light::SetColor	(float r, float g, float b) {
 	color.y = g;
 	color.z = b;
 };
+*/

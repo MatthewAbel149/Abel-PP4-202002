@@ -17,10 +17,10 @@ unsigned int numVerts;
 WVP myMatrices;
 
 typedef struct _cBuffData_ {
+	Light lightVar;
+
 	XMFLOAT3 position;
 	float timer;
-	//light/material variables
-	//Light lightVar;
 } cBuffData;
 
 ////////////////////////////////////////
@@ -132,6 +132,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	POINT prevPoint;
 	float mouseDeltaX, mouseDeltaY;
 
+	cBuffData bufferData;
+	bufferData.position = XMFLOAT3(0, 0, 0);
+	bufferData.timer = 0;
+
+	bufferData.lightVar.position  = XMFLOAT3 (0, 0, 0);
+	bufferData.lightVar.direction = XMFLOAT3 (0, 0, 0);
+	bufferData.lightVar.color	  = XMFLOAT3 (0, 0, 0);
+
 	bool showCursor = false;
 	bool showCursorPrev = true;
 
@@ -147,6 +155,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
+	float rot = 0;
 
 
 	// Main message loop:
@@ -214,7 +223,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		myCon->RSSetViewports(1, &myPort);
 
 
-		static float rot = 0;
 		rot += timer.Delta();
 
 #pragma region camera
@@ -357,6 +365,43 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				XMStoreFloat4x4(&myMatrices.wMatrix, XMMatrixIdentity());
 
 				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+			//////////////////////////////////////////////
+			// FLIP FLOP
+			//////////////////////////////////////////////
+			/*
+			static bool up = false;
+			static float lightrot = 0;
+			
+			if (up) lightrot += timer.Delta();
+			else	lightrot -= timer.Delta();
+			
+			if (lightrot >= 1) up = false;
+			if (lightrot <= -1) up = true;
+			*/
+			//////////////////////////////////////////////
+
+				myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
+
+				bufferData.lightVar.position = XMFLOAT3(1.f, 1.f, 1.f);
+				bufferData.lightVar.direction = XMFLOAT3(-0.2f, -0.6f, -0.2f);
+				bufferData.lightVar.color = XMFLOAT3(.5f, .8f, .9f);
+
+
+				XMStoreFloat3(&bufferData.position, cameraVector);
+				bufferData.timer = 0.25f;
+
+
+				//bufferData.lightVar.attenuation = 1.0f;
+				//bufferData.lightVar.range = 1.0f;
+				//bufferData.lightVar.intensity = 1.0f;
+
+				hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+				*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+				myCon->Unmap(cBuffList[1], 0);
+
+
 				DisplayModel(
 					&modelList[0],
 					samplerState,
@@ -420,10 +465,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
 
-			cBuffData bufferData;
+			
 			XMStoreFloat3(&bufferData.position, cameraVector);
 			bufferData.timer = 0.25f;
 
+			//////////////////////////////////////////////
+			// FLIP FLOP
+			//////////////////////////////////////////////
 			//static bool up = false;
 			//static float scaleValue = 0;
 			//
@@ -432,6 +480,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//
 			//if (scaleValue >= 1) up = false;
 			//if (scaleValue <= 0) up = true;
+			//////////////////////////////////////////////
 			//
 			//bufferData.position = XMFLOAT3(myMatrices.wMatrix.m[0][2], myMatrices.wMatrix.m[1][2], myMatrices.wMatrix.m[2][2]);
 			//bufferData.timer = timer.TotalTime();
@@ -445,6 +494,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//
 			//bufferData.timer = 0.0f;
 			//bufferData.timer = 1.0f;
+			//
 
 			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
@@ -463,6 +513,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				//vColorShader,
 				pReflectionShader,
 				vReflectionShader,
+				//pLightShader,
+				//vLightShader,
 				layoutVert,
 				myMatrices);
 
@@ -611,7 +663,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
+			//////////////////////////////////////////////////////////////////////////
+			
+			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
 
+			bufferData.lightVar.position  = XMFLOAT3(  1.0f,  1.0f,  1.0f);
+			bufferData.lightVar.direction = XMFLOAT3( -0.2f, -0.6f, -0.2f);
+			bufferData.lightVar.color	  = XMFLOAT3(  1.0f,  1.0f,  1.0f);
+
+
+			XMStoreFloat3(&bufferData.position, cameraVector);
+			bufferData.timer = 0.25f;
+
+
+			//bufferData.lightVar.attenuation = 1.0f;
+			//bufferData.lightVar.range = 1.0f;
+			//bufferData.lightVar.intensity = 1.0f;
+
+			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+			myCon->Unmap(cBuffList[1], 0);
+			
+			
+			///////////////////////////////////////////////////
+			
+			
 			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			DisplayModel(
 				&modelList[3],
@@ -619,8 +695,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				cBuffList[0],
 				myCon,
 				&gpuBuffer,
-				pMeshShader,
-				vMeshShader,
+				//pMeshShader,
+				//vMeshShader,
+				pLightShader,
+				vLightShader,
 				layoutVert,
 				myMatrices);
 
@@ -812,7 +890,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	cBuffList.push_back(tempBuff);
 
+	//tempBuff->Release();
+
 	////////////////////////////////////////////////////////
+
+	//ZeroMemory(&bDesc, sizeof(bDesc));
 
 	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bDesc.ByteWidth = sizeof(cBuffData);

@@ -10,61 +10,81 @@ struct OutputVertex
 	float3 WrlPos : POSITION;
 };
 
-
-struct Light
+cbuffer SHADER_VARS : register(b0)
 {
-	float3 position;
-	float3 direction;
-	float3 color;
+	struct {
 
-	float intensity;
-	float range;
-	float attenuation;
+		float3 position;
+		float intensity;
+		float3 direction;
+		float range;
+		float3 color;
+		float attenuation;
+
+	} light;
+	float3 cameraPos;
+	float timer;
+
 };
-
 
 // TODO : Make more interesting
 float3 main(OutputVertex inputPixel) : SV_TARGET
 {
 	float4 textureColor;
-
-
 	textureColor = diffuse.Sample(sampleType, inputPixel.uvw);
 
 
-	Light light0;
-	light0.direction = float3(0.0f, -0.9f, -0.03f);
-	light0.color = float3(0.0f, 0.0f, 1.0f);
-	//light0.color = float3(0.0f, 0.0f, 1.0f);
 
-	float lightratio = saturate(dot(-light0.direction, inputPixel.nrm));
-	float3 result0 = lightratio * (light0.color.xyz * textureColor.xyz);
 
-	
+	////////////////////////////////////////////////////
+	//	Directional Light
+	////////////////////////////////////////////////////
+
+	float3 normalizedLightDir = normalize(light.direction);
+
+	inputPixel.nrm = normalize(inputPixel.nrm);
+
+	float lightratio = saturate(dot(-normalizedLightDir, inputPixel.nrm));
+	float3 result0 = float3(lightratio * light.color * textureColor.xyz); //use light color
+
+
+	////////////////////////////////////////////////////
+	//	End of Directional Light
+	////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////
+	//	Point Light
+	////////////////////////////////////////////////////
+
 	//
-	Light light1;
+	////
+	//Light light1;
 
-	light1.position	   = float3(3.0f,  3.0f, -3.0f);
-	light1.color	   = float3(1.0f,  1.0f,  0.0f);
-	light1.range	   = float (60.0f);
-	
-	//light1.intensity   = float (0.7f);
-	//light1.attenuation = float (0.1f);
+	//light1.position  = float3( 5.0f,  2.0f, -5.0f );
+	//light1.color	   = float3( 1.0f,  1.0f,  0.0f );
+	//light1.range	   = float ( 15.0f );
+	//
 
+	//float3 lightDir  = (light1.position.xyz - inputPixel.WrlPos);
+	//float distance   = length(lightDir);
+	//lightDir		   = lightDir / distance; //normalized direction vector
+	//float limit	   = 1 - saturate(distance / light1.range);
 
-	float3 lightDir     = (light1.position.xyz - inputPixel.WrlPos);
-	float distance		= length(lightDir);
-	lightDir			= lightDir / distance; //normalized direction vector
-	float limit			= 1 - saturate(distance / light1.range);
-
-	limit = limit * limit; // exponential
+	//limit = limit * limit; // exponential
 
 
-	lightratio			= saturate(dot(lightDir, inputPixel.nrm));
-	float3 result1		= limit * lightratio * light1.color * textureColor;
-	
-	textureColor.xyz = result0 + result1;
+	//lightratio			= saturate(dot(lightDir, inputPixel.nrm));
+	//float3 result1		= limit * lightratio * light1.color * textureColor;
 
-	//textureColor = float4(.4, 0, .4, 1);
+	////////////////////////////////////////////////////
+	//	End of Point Light
+	////////////////////////////////////////////////////
+
+	//
+	//textureColor.xyz = result0 + result1;
+
+
+	textureColor.xyz = result0;
+	//textureColor.xyz = light.color;
 	return textureColor;
 }
