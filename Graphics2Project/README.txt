@@ -20,3 +20,4 @@ Scene:
 	N	: Next scene
 Misc:
 	I	: (Scene 0) Toggle transparent culling
+	K	: (Scene 2) Stop trash can
