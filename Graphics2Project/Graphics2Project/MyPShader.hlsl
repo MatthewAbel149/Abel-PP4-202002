@@ -19,7 +19,7 @@ struct LightStruct {
 	float3 color;
 	float attenuation;
 
-} ;
+};
 cbuffer SHADER_VARS : register(b0)
 {
 	LightStruct light[2];
@@ -49,17 +49,27 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 	}
 
 
+	/////////////////////////////////
+	//need to add dynamically:
+	float specularIntensity = 0.8f;
+	float specularPower		= 50.f;
+
+	/////////////////////////////////
+
+
 	for (unsigned int i = 0; i < 2; i++)
 	{
 
 		if (!(light[i].color.x == 0) ||
 			!(light[i].color.y == 0) ||
-			!(light[i].color.z == 0) ){
+			!(light[i].color.z == 0)) {
 
 			////////////////////////////////////////////////////
 			//	Directional Light
 			////////////////////////////////////////////////////
-			if (!(light[i].direction.x == 0) && !(light[i].direction.y == 0) && !(light[i].direction.z == 0) )
+			if (!(light[i].direction.x == 0) &&
+				!(light[i].direction.y == 0) &&
+				!(light[i].direction.z == 0))
 		{
 			float3 normalizedLightDir = normalize(light[i].direction);
 
@@ -67,33 +77,64 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 			result[i] = float3(lightratio * light[i].color * textureColor.xyz); //use light color
 		}
 
-		////////////////////////////////////////////////////
-		//	End of Directional Light
-		////////////////////////////////////////////////////
+			////////////////////////////////////////////////////
+			//	End of Directional Light
+			////////////////////////////////////////////////////
 
-		////////////////////////////////////////////////////
-		//	Point Light
-		////////////////////////////////////////////////////
+			////////////////////////////////////////////////////
+			//	Point Light
+			////////////////////////////////////////////////////
 
-		else if (light[i].direction.x == 0 &&
-			 	 light[i].direction.y == 0 &&
-				 light[i].direction.z == 0)
-		{
+			else if (light[i].direction.x == 0 &&
+					 light[i].direction.y == 0 &&
+					 light[i].direction.z == 0)
+				 {	
 
-			float3 lightDir = (light[i].position.xyz - inputPixel.WrlPos);
-			float distance = length(lightDir);
-			lightDir = lightDir / distance; //normalized direction vector
-			float limit = 1 - saturate(distance / light[i].range);
+					float3 lightDir = (light[i].position.xyz - inputPixel.WrlPos);
+					
+					float distance = length(lightDir);
+					lightDir = lightDir / distance; //normalized direction vector
+					float limit = 1 - saturate(distance / light[i].range);
+					limit = limit * limit; // exponential
+					
+					float lightratio = saturate(dot(lightDir, inputPixel.nrm));
+					
+					result[i] = limit * lightratio * light[i].color * textureColor;
+					
+					////////////////////////////////////////////////////////////////////
+					//	SPECULAR MATH
+					////////////////////////////////////////////////////////////////////
+					
+					//VIEWDIR = NORMALIZE( CAMWORLDPOS – SURFACEPOS ) 
+					//HALFVECTOR = NORMALIZE((-LIGHTDIR) + VIEWDIR)
+					//INTENSITY = SATURATE(POW(DOT(NORMAL, NORMALIZE(HALFVECTOR)), SPECULARPOWER));
+					//RESULT = LIGHTCOLOR * SPECULARINTENSITY * INTENSITY
+					
+					float3 viewDir = normalize(inputPixel.WrlPos - cameraPos);
+					//float3 reflectVector = normalize((light[i].position.xyz - inputPixel.WrlPos) + viewDir);
+					//float3 reflectVector = normalize(reflect((light[i].position.xyz - inputPixel.WrlPos) + viewDir, inputPixel.nrm));
+					float3 reflectVector = normalize(reflect((inputPixel.WrlPos - light[i].position.xyz) + viewDir, inputPixel.nrm));
+					float intensity = saturate(pow(dot(inputPixel.nrm, normalize(reflectVector)), specularPower));
+					//float intensity = 0.3f;
+					
+					result[i] += light[i].color * specularIntensity * intensity;
+					
+					////////////////////////////////////////////////////////////////////
+					
+			 	 }
 
-			limit = limit * limit; // exponential
 
-			float lightratio = saturate(dot(lightDir, inputPixel.nrm));
-			result[i] = limit * lightratio * light[i].color * textureColor;
-		}
-		////////////////////////////////////////////////////
-		//	End of Point Light
-		////////////////////////////////////////////////////
-		}
+
+
+
+
+
+			////////////////////////////////////////////////////
+			//	End of Point Light
+			////////////////////////////////////////////////////
+			}
+
+
 
 		//
 	}
