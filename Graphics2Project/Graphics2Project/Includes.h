@@ -31,5 +31,6 @@ using namespace std;
 #include "ReflectionPShader.csh"
 #include "ReflectionVShader.csh"
 #include "SunPShader.csh"
+#include "LightpShader.csh"
  
 #include "assets/Stonehenge/StoneHenge.h"

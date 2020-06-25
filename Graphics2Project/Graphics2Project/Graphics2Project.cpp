@@ -49,6 +49,7 @@ ID3D11PixelShader* pLightShader;
 ID3D11PixelShader* pColorShader;
 ID3D11PixelShader* pReflectionShader;
 ID3D11PixelShader* pSunShader;
+ID3D11PixelShader* pLightSpecularShader;
 
 ID3D11VertexShader* vMeshShader;
 ID3D11VertexShader* vLightShader;
@@ -156,20 +157,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	bool showCursor = false;
 	bool showCursorPrev = true;
-
-
-	/*
-	static OBJ_VERTEX pointArr[14];
-	for (int i = 0; i < 2; ++i)
-	{
-		for (int j = 0; j < 2; ++j)
-		{
-			pointArr[i * 4 + j].pos = { i * 1.0f, 0, j * 1.0f };
-			pointArr[i * 4 + j].nrm = { 0, 1, 0 };
-			pointArr[i * 4 + j].tex = { 1, 1, 0 };
-		}
-	}
-	*/
 
 	float rot = 0;
 
@@ -329,7 +316,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (GetAsyncKeyState('N') & 1) scene += 1;
 		if (scene == 3) scene -= 3;
 
-
+		
 #pragma region skybox
 		{
 			////////////////////////////////////////////////////////////////////////
@@ -370,23 +357,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 #pragma endregion
 
-
 		if (scene == 0) {
 
-			skybox.texture = skyboxTextures[3];
+			skybox.texture = skyboxTextures[4];
 
-			//bufferData.lightVar[0].position = XMFLOAT3(cos(rot) * 12, 3.f, sin(rot) * 12);
-			bufferData.lightVar[0].position = XMFLOAT3(11, 3.f, 11);
+			bufferData.lightVar[0].position = XMFLOAT3(cos(rot/2) * 12, 3.f, sin(rot/2) * 12);
+			//bufferData.lightVar[0].position = XMFLOAT3(11, 3.f, 11);
 			bufferData.lightVar[0].direction = XMFLOAT3(0.f, 0.f, 0.f);
-			bufferData.lightVar[0].color = XMFLOAT3(1.f, .3f, .3f);
+			bufferData.lightVar[0].color = XMFLOAT3(.0f, .6f, .9f);
 			bufferData.lightVar[0].attenuation = 1.0f;
 			bufferData.lightVar[0].range = 10.0f;
 			bufferData.lightVar[0].intensity = 1.0f;
 
-			bufferData.lightVar[1].position = XMFLOAT3(0, 0, 0);
-			bufferData.lightVar[1].direction = XMFLOAT3(-0.2f, -0.6f, -0.2f);
-			bufferData.lightVar[1].color = XMFLOAT3(.7f, .9f, 1.f);
-			bufferData.lightVar[1].range = 10.0f;
+			//bufferData.lightVar[1].position = XMFLOAT3(0, 0, 0);
+			//bufferData.lightVar[1].direction = XMFLOAT3(-0.2f, -0.6f, -0.2f);
+			//bufferData.lightVar[1].color = XMFLOAT3(.7f, .9f, 1.f);
+			//bufferData.lightVar[1].range = 10.0f;
+			//bufferData.lightVar[1].intensity = 10;
+			//bufferData.lightVar[1].attenuation = 10;
+
+			bufferData.lightVar[1].position = XMFLOAT3(-cos(rot), 3, sin(rot));
+			bufferData.lightVar[1].direction = XMFLOAT3(0.f, 0.f, 0.f);
+			bufferData.lightVar[1].color = XMFLOAT3(.4f, .8f, .9f);
+			bufferData.lightVar[1].range = 5.0f;
 			bufferData.lightVar[1].intensity = 10;
 			bufferData.lightVar[1].attenuation = 10;
 
@@ -397,22 +390,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				XMStoreFloat4x4(&myMatrices.wMatrix, XMMatrixIdentity());
 
 				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-
-				/*
-				//////////////////////////////////////////////
-				// FlipFlop()
-				//////////////////////////////////////////////
-				static bool up = false;
-				static float lightrot = 0;
-
-				if (up) lightrot += timer.Delta();
-				else	lightrot -= timer.Delta();
-
-				if (lightrot >= 1) up = false;
-				if (lightrot <= -1) up = true;
-				//////////////////////////////////////////////
-				*/
 
 
 				myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
@@ -434,14 +411,90 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					cBuffList[0],
 					myCon,
 					&gpuBuffer,
-					//pMeshShader,
-					//vMeshShader,
 					pLightShader,
 					vLightShader,
 					layoutVert,
 					myMatrices);
 			}
 #pragma endregion
+
+#pragma region Sword
+			{
+				temporaryMatrix = XMMatrixIdentity();
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0.35f, 6.2f, 0), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(3.1415 / 2.f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationZ(3.1415 / 2.f), temporaryMatrix);
+
+				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+				myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
+
+				XMStoreFloat3(&bufferData.position, camera.r[3]);
+				bufferData.timer = 0.1f;
+
+				///////////////////////////////////////////////////////////////////////////////
+
+
+				hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+				*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+				myCon->Unmap(cBuffList[1], 0);
+
+
+				DisplayModel(
+					&modelList[10],
+					samplerState,
+					cBuffList[0],
+					myCon,
+					&gpuBuffer,
+					pLightSpecularShader,
+					vLightShader,
+					layoutVert,
+					myMatrices);
+			}
+#pragma endregion
+
+#pragma region Shield
+			{
+				temporaryMatrix = XMMatrixIdentity();
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0.35f, 1.2f, -2.2f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(3.1415f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-0.45f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(0.25, 0.25, 0.25), temporaryMatrix);
+
+				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+				myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
+
+				XMStoreFloat3(&bufferData.position, camera.r[3]);
+				bufferData.timer = 0.1f;
+
+				///////////////////////////////////////////////////////////////////////////////
+
+
+				hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+				*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+				myCon->Unmap(cBuffList[1], 0);
+
+
+				DisplayModel(
+					&modelList[11],
+					samplerState,
+					cBuffList[0],
+					myCon,
+					&gpuBuffer,
+					pLightSpecularShader,
+					vLightShader,
+					layoutVert,
+					myMatrices);
+			}
+#pragma endregion
+			/*
 #pragma region King
 			{
 				//-----------------------------------------
@@ -544,7 +597,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				layoutVert,
 				myMatrices);
 
-#pragma endregion
+#pragma endregion*/
 		}
 
 
@@ -779,7 +832,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, sunPos);
 
 			temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.01f, .01f, .01f), temporaryMatrix);
-			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(75, 0, 0), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(150, 0, 0), temporaryMatrix);
 
 			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(rot), temporaryMatrix);
 			//temporaryMatrix = XMMatrixMultiply(XMMatrixMultiply(XMMatrixRotationY(rot), sunPos), temporaryMatrix);
@@ -818,7 +871,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				&gpuBuffer,
 				//pMeshShader,
 				//vMeshShader,
-				pLightShader,
+				pLightSpecularShader,
 				vLightShader,
 				layoutVert,
 				myMatrices);
@@ -829,28 +882,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			//matrix math
 			temporaryMatrix = XMMatrixIdentity();
 
-			//temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(50, 0, 25), temporaryMatrix);
-
-
 			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(25, 0, 0), temporaryMatrix);
 			
 
 			temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.001f, .001f, .001f), temporaryMatrix);
 
-			//temporaryMatrix = XMMatrixMultiply(XMMatrixRotationZ(3.14f / 3.f), temporaryMatrix);
-			//temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(3.14f / 2.f), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationZ(3.14f / 3.f), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(3.14f / 2.f), temporaryMatrix);
 
-			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationY(-rot / 4));
 			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, planetPos);
-
-			//XMVECTOR moonVec = temporaryMatrix.r[3];
-
-			//temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationZ(rot));
-			
-			//temporaryMatrix.r[3] = moonVec;
-
-			//moonVec = XMVector2Transform(moonVec, planetPos);
-			//temporaryMatrix = XMMatrixMultiply(XMMatrixTranslationFromVector(planetPos), temporaryMatrix);
 
 			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
 
@@ -916,6 +956,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	pColorShader->Release();
 	pReflectionShader->Release();
 	pSunShader->Release();
+	pLightSpecularShader->Release();
 
 	vSkyboxShader->Release();
 	vMeshShader->Release();
@@ -1123,6 +1164,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	skyboxTextures.push_back(tempModel.texture);
 	hr = CreateDDSTextureFromFile(myDev, L"assets/Misc Models/FieldTexture.dds", nullptr, &(tempModel.texture));
 	skyboxTextures.push_back(tempModel.texture);
+	hr = CreateDDSTextureFromFile(myDev, L"assets/Misc Models/DarkFieldTexture.dds", nullptr, &(tempModel.texture));
+	skyboxTextures.push_back(tempModel.texture);
 
 
 
@@ -1329,6 +1372,33 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 #pragma endregion
 
+#pragma region Sword
+
+	LoadOBJ(
+		"assets/Dark Sword/Dark Sword.obj",
+		L"assets/Dark Sword/a.dds",
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+	modelList.push_back(tempModel);
+
+#pragma endregion
+
+#pragma region Shield
+
+	LoadOBJ(
+		"assets/Shield/model.obj",
+		L"assets/Shield/0_model0.dds",
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+	modelList.push_back(tempModel);
+
+#pragma endregion
 
 	hr = myDev->CreatePixelShader(&MyMeshPShader, sizeof(MyMeshPShader), nullptr, &pMeshShader);
 	hr = myDev->CreateVertexShader(&MyMeshVShader, sizeof(MyMeshVShader), nullptr, &vMeshShader);
@@ -1348,6 +1418,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hr = myDev->CreateVertexShader(&TextureToGridVShader, sizeof(TextureToGridVShader), nullptr, &vTextureToGridShader);
 
 	hr = myDev->CreatePixelShader(&SunPShader, sizeof(SunPShader), nullptr, &pSunShader);
+	hr = myDev->CreatePixelShader(&LightpShader, sizeof(LightpShader), nullptr, &pLightSpecularShader);
 
 	hr = myDev->CreateGeometryShader(&MyGShader, sizeof(MyGShader), nullptr, &gShader);
 

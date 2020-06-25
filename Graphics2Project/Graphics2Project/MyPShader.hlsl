@@ -49,13 +49,6 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 	}
 
 
-	/////////////////////////////////
-	//need to add dynamically:
-	float specularIntensity = 0.8f;
-	float specularPower		= 50.f;
-
-	/////////////////////////////////
-
 
 	for (unsigned int i = 0; i < 2; i++)
 	{
@@ -64,9 +57,6 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 			!(light[i].color.y == 0) ||
 			!(light[i].color.z == 0)) {
 
-			////////////////////////////////////////////////////
-			//	Directional Light
-			////////////////////////////////////////////////////
 			if (!(light[i].direction.x == 0) &&
 				!(light[i].direction.y == 0) &&
 				!(light[i].direction.z == 0))
@@ -76,14 +66,6 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 			float lightratio = saturate(dot(-normalizedLightDir, inputPixel.nrm));
 			result[i] = float3(lightratio * light[i].color * textureColor.xyz); //use light color
 		}
-
-			////////////////////////////////////////////////////
-			//	End of Directional Light
-			////////////////////////////////////////////////////
-
-			////////////////////////////////////////////////////
-			//	Point Light
-			////////////////////////////////////////////////////
 
 			else if (light[i].direction.x == 0 &&
 					 light[i].direction.y == 0 &&
@@ -101,43 +83,11 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 					
 					result[i] = limit * lightratio * light[i].color * textureColor;
 					
-					////////////////////////////////////////////////////////////////////
-					//	SPECULAR MATH
-					////////////////////////////////////////////////////////////////////
-					
-					//VIEWDIR = NORMALIZE( CAMWORLDPOS – SURFACEPOS ) 
-					//HALFVECTOR = NORMALIZE((-LIGHTDIR) + VIEWDIR)
-					//INTENSITY = SATURATE(POW(DOT(NORMAL, NORMALIZE(HALFVECTOR)), SPECULARPOWER));
-					//RESULT = LIGHTCOLOR * SPECULARINTENSITY * INTENSITY
-					
-					float3 viewDir = normalize(inputPixel.WrlPos - cameraPos);
-					//float3 reflectVector = normalize((light[i].position.xyz - inputPixel.WrlPos) + viewDir);
-					//float3 reflectVector = normalize(reflect((light[i].position.xyz - inputPixel.WrlPos) + viewDir, inputPixel.nrm));
-					float3 reflectVector = normalize(reflect((inputPixel.WrlPos - light[i].position.xyz) + viewDir, inputPixel.nrm));
-					float intensity = saturate(pow(dot(inputPixel.nrm, normalize(reflectVector)), specularPower));
-					//float intensity = 0.3f;
-					
-					result[i] += light[i].color * specularIntensity * intensity;
-					
-					////////////////////////////////////////////////////////////////////
 					
 			 	 }
-
-
-
-
-
-
-
-			////////////////////////////////////////////////////
-			//	End of Point Light
-			////////////////////////////////////////////////////
 			}
-
-
-
-		//
 	}
+
 	float3 total = float3(0,0,0);
 	for (unsigned int i = 0; i < 2; i++)
 	{
@@ -145,8 +95,5 @@ float3 main(OutputVertex inputPixel) : SV_TARGET
 	}
 	textureColor.xyz = total + ambientColor;
 
-
-	//textureColor.xyz = result0;
-	//textureColor.xyz = light.color;
 	return textureColor;
 }

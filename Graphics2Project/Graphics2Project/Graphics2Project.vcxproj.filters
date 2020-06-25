@@ -103,5 +103,6 @@
     <FxCompile Include="ReflectionVShader.hlsl" />
     <FxCompile Include="MyGShader.hlsl" />
     <FxCompile Include="SunPShader.hlsl" />
+    <FxCompile Include="LightpShader.hlsl" />
   </ItemGroup>
 </Project>
