@@ -364,7 +364,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			bufferData.lightVar[0].position = XMFLOAT3(cos(rot/2) * 12, 3.f, sin(rot/2) * 12);
 			//bufferData.lightVar[0].position = XMFLOAT3(11, 3.f, 11);
 			bufferData.lightVar[0].direction = XMFLOAT3(0.f, 0.f, 0.f);
-			bufferData.lightVar[0].color = XMFLOAT3(.0f, .6f, .9f);
+			bufferData.lightVar[0].color = XMFLOAT3(1.f, .6f, .2f);
 			bufferData.lightVar[0].attenuation = 1.0f;
 			bufferData.lightVar[0].range = 10.0f;
 			bufferData.lightVar[0].intensity = 1.0f;
@@ -459,8 +459,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #pragma region Shield
 			{
 				temporaryMatrix = XMMatrixIdentity();
-				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0.35f, 1.2f, -2.2f), temporaryMatrix);
-				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(3.1415f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0.35f, 1.2f, 3.f), temporaryMatrix);
+				//temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(3.1415f), temporaryMatrix);
 				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-0.45f), temporaryMatrix);
 				temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(0.25, 0.25, 0.25), temporaryMatrix);
 
@@ -490,6 +490,80 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					&gpuBuffer,
 					pLightSpecularShader,
 					vLightShader,
+					layoutVert,
+					myMatrices);
+			}
+#pragma endregion
+
+#pragma region CoolShield
+			{
+				temporaryMatrix = XMMatrixIdentity();
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(0.35f, 1.2f, -2.2f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationY(3.1415f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(0.9f), temporaryMatrix);
+				temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(2, 2, 2), temporaryMatrix);
+
+				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+				myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+				myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
+
+				XMStoreFloat3(&bufferData.position, camera.r[3]);
+				bufferData.timer = 0.1f;
+
+				///////////////////////////////////////////////////////////////////////////////
+
+
+				hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+				*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+				myCon->Unmap(cBuffList[1], 0);
+
+
+				DisplayModel(
+					&modelList[12],
+					samplerState,
+					cBuffList[0],
+					myCon,
+					&gpuBuffer,
+					pLightSpecularShader,
+					vLightShader,
+					layoutVert,
+					myMatrices);
+			}
+#pragma endregion
+
+#pragma region floating orb
+			{
+				bufferData.timer = 1;
+
+				if (GetAsyncKeyState('I'))
+				{
+					bufferData.timer = 0;
+				}
+
+
+				hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+				*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+				myCon->Unmap(cBuffList[1], 0);
+
+
+				temporaryMatrix = XMMatrixIdentity();
+
+				temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(cos(rot / 2) * 12, 3.f, sin(rot / 2) * 12), temporaryMatrix);
+				//temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.2f, .2f, .2f), temporaryMatrix);
+
+				XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+				//-----------------------------------------
+				DisplayModel(
+					&modelList[8],
+					samplerState,
+					cBuffList[0],
+					myCon,
+					&gpuBuffer,
+					pMeshShader,
+					vMeshShader,
 					layoutVert,
 					myMatrices);
 			}
@@ -530,79 +604,33 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					myMatrices);
 			}
 #pragma endregion
-#pragma region Trash Can
-	
-			myCon->VSSetConstantBuffers(0, 1, constants);
-
-			//matrix math
-			temporaryMatrix = XMMatrixIdentity();
-
-			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(6, 1.6, 6), temporaryMatrix);
-			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(-3.14159265 / 2), temporaryMatrix);
-
-			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
-
-			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
-
-
-			XMStoreFloat3(&bufferData.position, cameraVector);
-			bufferData.timer = 0.25f;
-
-			//////////////////////////////////////////////
-			// FLIP FLOP
-			//////////////////////////////////////////////
-			//static bool up = false;
-			//static float scaleValue = 0;
-			//
-			//if (up) scaleValue += timer.Delta() / 1.2f;
-			//else	scaleValue -= timer.Delta() / 1.2f;
-			//
-			//if (scaleValue >= 1) up = false;
-			//if (scaleValue <= 0) up = true;
-			//////////////////////////////////////////////
-			//
-			//bufferData.position = XMFLOAT3(myMatrices.wMatrix.m[0][2], myMatrices.wMatrix.m[1][2], myMatrices.wMatrix.m[2][2]);
-			//bufferData.timer = timer.TotalTime();
-			//
-			//temporaryMatrix = XMMatrixMultiply(
-			//	XMMatrixScaling(
-			//		cos(scaleValue) + 0.22f,
-			//		cos(scaleValue) + 0.22f,
-			//		sin(scaleValue) + 0.75f),
-			//	temporaryMatrix);
-			//
-			//bufferData.timer = 0.0f;
-			//bufferData.timer = 1.0f;
-			//
-
-			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
-			myCon->Unmap(cBuffList[1], 0);
-
-			myCon->PSSetShaderResources(1, 1, &skyboxTextures[3]);
-
-			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			DisplayModel(
-				&modelList[5],
-				samplerState,
-				cBuffList[0],
-				myCon,
-				&gpuBuffer,
-				//pColorShader,
-				//vColorShader,
-				pReflectionShader,
-				vReflectionShader,
-				//pLightShader,
-				//vLightShader,
-				layoutVert,
-				myMatrices);
-
-#pragma endregion*/
+*/
 		}
 
 
 		if (scene == 1) {
 			skybox.texture = skyboxTextures[1];
+
+			bufferData.lightVar[0].position = XMFLOAT3(0, 0, 0);
+			bufferData.lightVar[0].direction = XMFLOAT3(0.05f, -0.2f, -0.5f);
+			bufferData.lightVar[0].color = XMFLOAT3(0.8f, 1.0f, 1.0f);
+			bufferData.lightVar[0].range = 0.0f;
+			bufferData.lightVar[0].intensity = 10;
+			bufferData.lightVar[0].attenuation = 10;
+
+			bufferData.lightVar[1].position = XMFLOAT3(0,0,0);
+			bufferData.lightVar[1].direction = XMFLOAT3(0, 0, 0);
+			bufferData.lightVar[1].color = XMFLOAT3(0, 0, 0);
+			bufferData.lightVar[1].attenuation = 0;
+			bufferData.lightVar[1].range = 0;
+			bufferData.lightVar[1].intensity =0;
+
+			bufferData.timer = .6f;
+
+
+			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+			myCon->Unmap(cBuffList[1], 0);
 #pragma region Pineapple
 			{
 				//*------------------- Load complex mesh
@@ -627,8 +655,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					cBuffList[0],
 					myCon,
 					&gpuBuffer,
-					pMeshShader,
-					vMeshShader,
+					pLightShader,
+					vLightShader,
 					layoutVert,
 					myMatrices);
 			}
@@ -654,8 +682,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					cBuffList[0],
 					myCon,
 					&gpuBuffer,
-					pMeshShader,
-					vMeshShader,
+					pLightShader,
+					vLightShader,
 					layoutVert,
 					myMatrices);
 			}
@@ -681,7 +709,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 					cBuffList[0],
 					myCon,
 					&gpuBuffer,
-					pMeshShader,
+					pLightShader,
 					vTextureToGridShader,
 					layoutVert,
 					myMatrices);
@@ -916,6 +944,108 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				//vMeshShader,
 				pLightShader,
 				vLightShader,
+				layoutVert,
+				myMatrices);
+
+#pragma endregion
+
+#pragma region Trash Can
+
+			myCon->VSSetConstantBuffers(0, 1, constants);
+
+			static float trashRot = 0;
+
+
+
+
+
+			//matrix math
+			temporaryMatrix = XMMatrixIdentity();
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixTranslation(-120, 0, 3), temporaryMatrix);
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(trashRot), temporaryMatrix);
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixRotationY(trashRot / 10));
+	
+			if (!GetAsyncKeyState('K'))
+			{
+
+				trashRot += timer.Delta();
+			}
+
+
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+			XMMATRIX trashCanMatrix = temporaryMatrix;
+
+
+			myCon->PSSetConstantBuffers(0, 1, &cBuffList[1]);
+
+
+			XMStoreFloat3(&bufferData.position, cameraVector);
+			bufferData.timer = 0.25f;
+
+			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+			myCon->Unmap(cBuffList[1], 0);
+
+			myCon->PSSetShaderResources(1, 1, &skyboxTextures[0]);
+
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			DisplayModel(
+				&modelList[5],
+				samplerState,
+				cBuffList[0],
+				myCon,
+				&gpuBuffer,
+				pReflectionShader,
+				vReflectionShader,
+				layoutVert,
+				myMatrices);
+
+#pragma endregion
+
+#pragma region quad
+			//matrix math
+			temporaryMatrix = XMMatrixIdentity();
+
+			temporaryMatrix = XMMatrixMultiply(XMMatrixScaling(.01, .01, .01), temporaryMatrix);
+
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, XMMatrixTranslation(0, 0, -1.3));
+			
+			temporaryMatrix = XMMatrixMultiply(XMMatrixRotationX(3.1415 / 2), temporaryMatrix);
+
+			temporaryMatrix = XMMatrixMultiply(temporaryMatrix, trashCanMatrix);
+
+
+
+			XMStoreFloat4x4(&myMatrices.wMatrix, temporaryMatrix);
+
+			myCon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+			///////////////////////////////////////////////////////////////////////////////
+
+			XMStoreFloat3(&bufferData.position, cameraVector);
+
+			//bufferData.timer = rot;
+			//bufferData.timer = timer.TotalTime();
+
+			hr = myCon->Map(cBuffList[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			*((cBuffData*)((&gpuBuffer)->pData)) = bufferData;
+			myCon->Unmap(cBuffList[1], 0);
+			///////////////////////////////////////////////////////////////////////////////
+
+
+			DisplayModel(
+				&modelList[13],
+				samplerState,
+				cBuffList[0],
+				myCon,
+				&gpuBuffer,
+				pMeshShader,
+				vMeshShader,
 				layoutVert,
 				myMatrices);
 
@@ -1397,6 +1527,44 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		myDev
 	);
 	modelList.push_back(tempModel);
+
+#pragma endregion
+
+#pragma region CoolShield
+
+	LoadOBJ(
+		"assets/Shield/frey_shield.obj",
+		L"assets/Shield/frey-shield.dds",
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+	modelList.push_back(tempModel);
+
+#pragma endregion
+
+#pragma region quad
+
+	//----------------------------------------------------
+	// Procedural Mesh : Grid
+	//----------------------------------------------------
+
+	MakeGrid(50, 1.0f, &ObjData, tempVertData);
+
+	LoadModelFromOBJ(
+		L"assets/Misc Textures/Secret Image.dds",
+		ObjData,
+		&tempModel,
+		&bDesc,
+		&subData,
+		myDev
+	);
+
+	modelList.push_back(tempModel);
+	ObjData.indexList.clear();
+	ObjData.vertexList.clear();
+	tempModel.heightMap = nullptr;
 
 #pragma endregion
 

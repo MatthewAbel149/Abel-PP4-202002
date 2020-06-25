@@ -9,8 +9,7 @@ Camera:
 	SPACE	: Up
 	C	: Down
 
-	O	: Decrease camera speed
-	P	: Increase camera speed
+	LSHIFT	: Increase camera speed
 
 	MOUSE	: Rotate camera
 
@@ -20,5 +19,4 @@ Camera:
 Scene:
 	N	: Next scene
 Misc:
-	B	: (Scene 0) Enlarge king
-	K	: (Scene 0) Rotate king
+	I	: (Scene 0) Toggle transparent culling
