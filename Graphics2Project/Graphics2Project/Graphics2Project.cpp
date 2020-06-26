@@ -13,8 +13,6 @@ bool MakeGrid(int halfSize, float spaceBetweenLines, OBJ_DATA* ObjData, OBJ_VERT
 using namespace DirectX;
 using namespace std;
 
-unsigned int numVerts;
-
 // Math Stuff
 WVP myMatrices;
 
@@ -136,6 +134,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	POINT prevPoint;
 	float mouseDeltaX, mouseDeltaY;
 
+	bool showCursor = false;
+	bool showCursorPrev = true;
+
 	cBuffData bufferData;
 	bufferData.position = XMFLOAT3(0, 0, 0);
 	bufferData.timer = 0;
@@ -154,9 +155,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	bufferData.lightVar[1].intensity = 10;
 	bufferData.lightVar[1].attenuation = 10;
 	
-
-	bool showCursor = false;
-	bool showCursorPrev = true;
 
 	float rot = 0;
 
@@ -612,7 +610,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			skybox.texture = skyboxTextures[1];
 
 			bufferData.lightVar[0].position = XMFLOAT3(0, 0, 0);
-			bufferData.lightVar[0].direction = XMFLOAT3(0.05f, -0.2f, -0.5f);
+			bufferData.lightVar[0].direction = XMFLOAT3(0.05f + cos(rot) / 10.f, -0.2f + sin(rot) / 10.f, -0.5f);
 			bufferData.lightVar[0].color = XMFLOAT3(0.8f, 1.0f, 1.0f);
 			bufferData.lightVar[0].range = 0.0f;
 			bufferData.lightVar[0].intensity = 10;
@@ -948,16 +946,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myMatrices);
 
 #pragma endregion
-
 #pragma region Trash Can
 
 			myCon->VSSetConstantBuffers(0, 1, constants);
 
 			static float trashRot = 0;
-
-
-
-
 
 			//matrix math
 			temporaryMatrix = XMMatrixIdentity();
@@ -1005,7 +998,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				myMatrices);
 
 #pragma endregion
-
 #pragma region quad
 			//matrix math
 			temporaryMatrix = XMMatrixIdentity();

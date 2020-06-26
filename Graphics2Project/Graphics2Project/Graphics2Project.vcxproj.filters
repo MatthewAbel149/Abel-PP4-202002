@@ -39,9 +39,6 @@
     <ClInclude Include="WICTextureLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DDSTextureLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="OBJLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -51,12 +48,12 @@
     <ClInclude Include="LightClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\Abel_Matthew_FinalE_PPIV\Abel_Matthew_FinalE_PPIV\DDSTextureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics2Project.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DDSTextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="OBJLoader.cpp">
@@ -66,6 +63,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LightClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Abel_Matthew_FinalE_PPIV\Abel_Matthew_FinalE_PPIV\DDSTextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

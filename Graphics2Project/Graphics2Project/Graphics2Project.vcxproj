@@ -154,8 +154,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\Abel_Matthew_FinalE_PPIV\Abel_Matthew_FinalE_PPIV\DDSTextureLoader.h" />
     <ClInclude Include="assets\Stonehenge\StoneHenge.h" />
-    <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="glm\glm.hpp" />
     <ClInclude Include="Graphics2Project.h" />
@@ -168,7 +168,7 @@
     <ClInclude Include="XTime.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DDSTextureLoader.cpp" />
+    <ClCompile Include="..\..\..\Abel_Matthew_FinalE_PPIV\Abel_Matthew_FinalE_PPIV\DDSTextureLoader.cpp" />
     <ClCompile Include="Graphics2Project.cpp" />
     <ClCompile Include="LightClass.cpp" />
     <ClCompile Include="OBJLoader.cpp" />
